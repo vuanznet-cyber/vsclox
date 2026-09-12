@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Valorant Web FPS - Tactical Knife Speed & Anti-Cheat AI v6</title>
+    <style>
+        body, html { margin: 0; padding: 0; overflow: hidden; width: 100%; height: 100%; font-family: 'Segoe UI', sans-serif; background-color: #000; }
+        canvas { display: block; }
+        #crosshair { position: absolute; top: 50%; left: 50%; width: 16px; height: 16px; transform: translate(-50%, -50%); pointer-events: none; z-index: 10; }
+        #crosshair::before, #crosshair::after { content: ''; position: absolute; background: #00ffcc; }
+        #crosshair::before { top: 7px; left: 0; width: 16px; height: 2px; }
+        #crosshair::after { top: 0; left: 7px; width: 2px; height: 16px; }
+        #blocker { position: absolute; width: 100%; height: 100%; background-color: rgba(15, 25, 35, 0.95); color: #ece8e1; display: flex; flex-direction: column; justify-content: center; align-items: center; cursor: pointer; z-index: 20; }
+        .btn-play { background-color: #ff4655; color: white; padding: 15px 40px; font-size: 20px; font-weight: bold; border: none; cursor: pointer; border-radius: 4px; margin-top: 15px; }
+        .btn-play:hover { background-color: #e53e4b; transform: scale(1.05); }
+        
+        .settings-box { display: flex; gap: 20px; background: rgba(25, 35, 45, 0.85); padding: 15px 25px; border-radius: 4px; border: 1px solid #ff4655; margin-top: 20px; font-size: 14px; }
+        .settings-box label { display: flex; flex-direction: column; gap: 5px; color: #ece8e1; font-weight: bold; }
+        .settings-box input { width: 120px; accent-color: #ff4655; }
+
+        #hud { position: absolute; width: 100%; height: 100%; top: 0; left: 0; pointer-events: none; z-index: 5; box-sizing: border-box; padding: 30px; display: flex; flex-direction: column; justify-content: space-between; }
+        .hud-left, .hud-right { display: flex; flex-direction: column; justify-content: flex-end; height: 100%; }
+        .hud-left { align-items: flex-start; } .hud-right { align-items: flex-end; }
+        .health-bar-container { width: 250px; height: 16px; background: rgba(255,255,255,0.2); border: 2px solid #ece8e1; margin-top: 5px; }
+        .health-bar { width: 100%; height: 100%; background-color: #00ffcc; transition: width 0.2s; }
+        .hud-text { font-size: 24px; font-weight: bold; color: #ece8e1; text-shadow: 2px 2px 4px rgba(0,0,0,0.8); }
+        .weapon-card { background: rgba(15, 25, 35, 0.85); border-right: 5px solid #ff4655; padding: 10px 20px; text-align: right; width: 180px; }
+        .weapon-name { font-size: 18px; color: #ff4655; font-weight: bold; margin-bottom: 5px; }
+        .ammo-text { font-size: 32px; color: #ece8e1; font-weight: bold; }
+        .damage-text { position: absolute; font-weight: 900; pointer-events: none; z-index: 15; text-shadow: 2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000; animation: floatUp 1s cubic-bezier(0.25, 1, 0.5, 1) forwards; transform: translate(-50%, -50%); }
+        @keyframes floatUp { 0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; } 20% { transform: translate(-50%, -100%) scale(1.3); opacity: 1; } 100% { transform: translate(-50%, -200%) scale(1); opacity: 0; } }
+    </style>
+</head>
+<body>
+    <div id="blocker">
+        <h1 style="color: #ff4655; font-size: 45px; margin: 0;">TACTICAL FPS ARENA v6</h1>
+        <p style="color: #8b978f; text-align: center; margin: 5px 0;"><b>+50% Tốc Chạy Khi Cầm Dao</b> áp dụng cho cả Bạn và Bot.<br>Hệ thống AI không gian: Bot tự mất dấu và đi lùng sục khi bạn trốn sau tường!</p>
+        
+        <button class="btn-play">VÀO ĐẤU TRƯỜNG</button>
+
+        <div class="settings-box">
+            <label>ĐỘ NHẠY CHUỘT: <input type="range" id="sens-slider" min="10" max="200" value="100"></label>
+            <label>GÓC NHÌN (FOV): <input type="range" id="fov-slider" min="60" max="100" value="75"></label>
+        </div>
+    </div>
+    
+    <div id="crosshair"></div>
+
+    <div id="hud">
+        <div class="hud-left">
+            <div class="hud-text">HP: <span id="hp-value">100</span> <span id="slide-status" style="font-size:16px; margin-left:10px; color:#ffcc00;"></span></div>
+            <div class="health-bar-container"><div id="health-bar" class="health-bar"></div></div>
+        </div>
+        <div class="hud-right">
+            <div class="weapon-card">
+                <div id="wp-display-name" class="weapon-name">VANDAL AR</div>
+                <div id="wp-display-ammo" class="ammo-text">25 / 90</div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/PointerLockControls.js"></script>
+
+    <script>
+        document.addEventListener('contextmenu', event => event.preventDefault());
+
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x0f1923);
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        scene.add(ambientLight);
+        const sunLight = new THREE.DirectionalLight(0xfff5e6, 0.7);
+        sunLight.position.set(20, 50, 20);
+        scene.add(sunLight);
+
+        const obstacles = [];
+        const barrels = [];
+        const vfxList = [];
+
+        // Mặt sàn đấu
+        const floorGeo = new THREE.PlaneGeometry(80, 80);
+        const floorMat = new THREE.MeshStandardMaterial({ color: 0x242b36, roughness: 0.9 });
+        const floor = new THREE.Mesh(floorGeo, floorMat);
+        floor.rotation.x = -Math.PI / 2;
+        scene.add(floor);
+
+        function buildStructure(w, h, d, x, y, z, color = 0x4a5568) {
+            const geo = new THREE.BoxGeometry(w, h, d);
+            const mat = new THREE.MeshStandardMaterial({ color: color });
+            const mesh = new THREE.Mesh(geo, mat);
+            mesh.position.set(x, y, z);
+            scene.add(mesh);
+            obstacles.push(mesh);
+        }
+
+        // Bản đồ Bunker chiến thuật
+        buildStructure(80, 16, 2, 0, 8, 40); buildStructure(80, 16, 2, 0, 8, -40);
+        buildStructure(2, 16, 80, 40, 8, 0); buildStructure(2, 16, 80, -40, 8, 0);
+        buildStructure(16, 4, 16, 0, 2, 0, 0x2f3640); 
+        buildStructure(10, 0.5, 10, 0, 4.25, 0, 0x718093);
+        buildStructure(4, 4, 16, -6, 2, 0, 0x2f3640);
+        buildStructure(4, 2, 4, 0, 1, 10, 0x9c6638);
+        buildStructure(4, 4, 4, 0, 2, 14, 0x9c6638);
+        buildStructure(3, 3, 3, -20, 1.5, 20); buildStructure(3, 3, 3, 20, 1.5, -20);
+        buildStructure(6, 4, 3, -15, 2, 0); buildStructure(6, 4, 3, 15, 2, 0);
+
+        // Tạo thùng xăng
+        const barrelLocations = [{x: 5, z: 5, y: 4.25}, {x: -15, z: 5, y: 2}, {x: 18, z: -18, y: 1.5}];
+        function createBarrels() {
+            barrels.forEach(b => scene.remove(b.mesh)); barrels.length = 0;
+            barrelLocations.forEach(loc => {
+                const geo = new THREE.CylinderGeometry(0.5, 0.5, 1.4, 12);
+                const mat = new THREE.MeshStandardMaterial({ color: 0xd35400, metalness: 0.3, roughness: 0.4 });
+                const mesh = new THREE.Mesh(geo, mat);
+                mesh.position.set(loc.x, loc.y + 0.7, loc.z); mesh.name = "barrel";
+                scene.add(mesh); barrels.push({ mesh: mesh, hp: 50, isExploded: false });
+            });
+        }
+        createBarrels();
+
+        // --- KHỞI TẠO BOT AI ---
+        const botGroup = new THREE.Group();
+        const hitTargets = [];
+        const botBodyMat = new THREE.MeshStandardMaterial({ color: 0xeb3b5a });
+        const botBody = new THREE.Mesh(new THREE.BoxGeometry(1.2, 1.6, 0.8), botBodyMat);
+        botBody.position.y = 0.8; botBody.name = "body";
+        botGroup.add(botBody); hitTargets.push(botBody);
+        
+        const botHeadMat = new THREE.MeshStandardMaterial({ color: 0xf39c12 });
+        const botHead = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.6), botHeadMat);
+        botHead.position.y = 1.9; botHead.name = "head";
+        botGroup.add(botHead); hitTargets.push(botHead);
+        scene.add(botGroup);
+        
+        // Bổ sung các biến tracking không gian không gian cho Bot
+        let botState = { 
+            hp: 100, lastShot: 0, isDead: false, velocity: new THREE.Vector3(),
+            currentMode: 'SEARCH', nextModeChange: 0, desiredMoveDir: new THREE.Vector3(), fireRate: 180,
+            isSliding: false, slideEndTime: 0, nextSlideAllowTime: 0, slideDir: new THREE.Vector3(),
+            ammo: 25, maxAmmo: 25, isReloading: false, reloadEndTime: 0, weapon: "VANDAL", lastKnifeAttack: 0,
+            
+            // Xử lý mất dấu người chơi chuẩn tactical
+            lastKnownPlayerPos: new THREE.Vector3(),
+            searchTargetPos: new THREE.Vector3(),
+            hasLastKnown: false,
+            searchTimer: 0
+        };
+
+        function resetBotPosition() {
+            botGroup.position.set(0, 0, -15);
+            botGroup.rotation.y = 0;
+            botState.hp = 100; botState.isDead = false; botState.velocity.set(0, 0, 0); botState.isSliding = false;
+            botState.ammo = 25; botState.isReloading = false; botState.weapon = "VANDAL";
+            botState.hasLastKnown = false; botState.currentMode = 'SEARCH';
+            botBodyMat.color.setHex(0xeb3b5a);
+            botState.nextSlideAllowTime = performance.now() + 2000;
+            botGroup.scale.set(1, 1, 1); botGroup.visible = true;
+            hitTargets.forEach(t => { if(t.position.y < 0) t.position.y += 200; });
+        }
+        resetBotPosition();
+
+        // --- ĐIỀU KHIỂN & SETTINGS NGƯỜI CHƠI ---
+        const controls = new THREE.PointerLockControls(camera, document.body);
+        const blocker = document.getElementById('blocker');
+        blocker.addEventListener('click', () => controls.lock());
+        controls.addEventListener('lock', () => blocker.style.display = 'none');
+        controls.addEventListener('unlock', () => blocker.style.display = 'flex');
+        scene.add(controls.getObject());
+
+        let BASE_FOV = 75;
+        const sensSlider = document.getElementById('sens-slider');
+        const fovSlider = document.getElementById('fov-slider');
+        
+        sensSlider.addEventListener('input', (e) => { controls.pointerSpeed = e.target.value / 100; });
+        fovSlider.addEventListener('input', (e) => { BASE_FOV = parseInt(e.target.value); if(!isADS) targetFov = BASE_FOV; });
+
+        const moveKeys = { forward: false, backward: false, left: false, right: false };
+        let canJump = false; const velocity = new THREE.Vector3(); const direction = new THREE.Vector3();
+        let prevTime = performance.now();
+        
+        const STAND_HEIGHT = 2.2;
+        const SLIDE_HEIGHT = 1.1;
+        let currentPlayerHeight = STAND_HEIGHT;
+        
+        let playerSlide = { isSliding: false, direction: new THREE.Vector3(), startTime: 0, endTime: 0, cooldownTime: 0 };
+
+        controls.getObject().position.set(0, STAND_HEIGHT, 25);
+
+        // --- HỆ THỐNG VŨ KHÍ ---
+        let currentWeapon = "VANDAL";
+        let knifeSwingEndTime = 0;
+
+        const weaponGroup = new THREE.Group();
+        
+        const vandalMeshGroup = new THREE.Group();
+        const gunBody = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.18, 1.1), new THREE.MeshStandardMaterial({ color: 0x1c1d21 }));
+        const barrelMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.5), new THREE.MeshStandardMaterial({ color: 0x010101 }));
+        barrelMesh.rotation.x = Math.PI / 2; barrelMesh.position.set(0, 0.02, -0.75);
+        vandalMeshGroup.add(gunBody); vandalMeshGroup.add(barrelMesh);
+        weaponGroup.add(vandalMeshGroup);
+
+        const knifeMeshGroup = new THREE.Group();
+        const knifeHandle = new THREE.Mesh(new THREE.BoxGeometry(0.05, 0.06, 0.3), new THREE.MeshStandardMaterial({ color: 0x555555 }));
+        const knifeBlade = new THREE.Mesh(new THREE.BoxGeometry(0.02, 0.08, 0.5), new THREE.MeshStandardMaterial({ color: 0xcccccc, metalness: 0.8, roughness: 0.2 }));
+        knifeBlade.position.z = -0.35;
+        knifeMeshGroup.add(knifeHandle); knifeMeshGroup.add(knifeBlade);
+        knifeMeshGroup.visible = false;
+        weaponGroup.add(knifeMeshGroup);
+
+        const posHipfire = new THREE.Vector3(0.3, -0.3, -0.7);
+        const posADS = new THREE.Vector3(0, -0.15, -0.5);
+        weaponGroup.position.copy(posHipfire); camera.add(weaponGroup);
+
+        let isADS = false; let targetFov = 75;
+        window.addEventListener('mousedown', (e) => { if (e.button === 2 && controls.isLocked && currentWeapon === "VANDAL") { isADS = true; targetFov = 45; crosshair.style.opacity = '0'; } });
+        window.addEventListener('mouseup', (e) => { if (e.button === 2) { isADS = false; targetFov = BASE_FOV; crosshair.style.opacity = '1'; } });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Digit1' && currentWeapon !== "VANDAL" && !playerSlide.isSliding) {
+                currentWeapon = "VANDAL"; vandalMeshGroup.visible = true; knifeMeshGroup.visible = false;
+                isADS = false; targetFov = BASE_FOV; crosshair.style.opacity = '1'; updateHUD();
+            }
+            if (e.code === 'Digit2' && currentWeapon !== "KNIFE" && !playerSlide.isSliding) {
+                currentWeapon = "KNIFE"; vandalMeshGroup.visible = false; knifeMeshGroup.visible = true;
+                isADS = false; targetFov = BASE_FOV; crosshair.style.opacity = '1'; updateHUD();
+            }
+            if (e.code === 'KeyR' && currentWeapon === "VANDAL") reloadWeapon();
+
+            if (!controls.isLocked) return;
+
+            if (!playerSlide.isSliding) {
+                if(e.code === 'KeyW') moveKeys.forward = true; if(e.code === 'KeyS') moveKeys.backward = true;
+                if(e.code === 'KeyA') moveKeys.left = true; if(e.code === 'KeyD') moveKeys.right = true;
+                if(e.code === 'Space' && canJump) { velocity.y += 35; canJump = false; }
+            }
+
+            if (e.code === 'KeyQ') {
+                const now = performance.now();
+                if (!playerSlide.isSliding && now > playerSlide.cooldownTime && canJump) {
+                    playerSlide.isSliding = true;
+                    playerSlide.startTime = now;
+                    playerSlide.endTime = now + 280;
+                    playerSlide.cooldownTime = now + 1200;
+
+                    playerSlide.direction.set(0,0,0);
+                    if (moveKeys.forward) playerSlide.direction.z = 1;
+                    if (moveKeys.backward) playerSlide.direction.z = -1;
+                    if (moveKeys.right) playerSlide.direction.x = 1;
+                    if (moveKeys.left) playerSlide.direction.x = -1;
+                    
+                    if (playerSlide.direction.lengthSq() === 0) playerSlide.direction.z = 1;
+                    playerSlide.direction.normalize();
+
+                    moveKeys.forward = moveKeys.backward = moveKeys.left = moveKeys.right = false;
+                }
+            }
+        });
+
+        document.addEventListener('keyup', (e) => {
+            if (playerSlide.isSliding) return;
+            if(e.code === 'KeyW') moveKeys.forward = false; if(e.code === 'KeyS') moveKeys.backward = false;
+            if(e.code === 'KeyA') moveKeys.left = false; if(e.code === 'KeyD') moveKeys.right = false;
+        });
+
+        let gameState = { hp: 100, currentAmmo: 25, max: 25, reserve: 90, reloading: false };
+        const bullets = []; const botBullets = [];
+        let isMousePressed = false; let playerLastShotTime = 0; let playerFireRate = 133;
+
+        function updateHUD() {
+            document.getElementById('hp-value').innerText = gameState.hp;
+            document.getElementById('health-bar').style.width = Math.max(0, gameState.hp) + "%";
+            
+            const wpName = document.getElementById('wp-display-name');
+            const wpAmmo = document.getElementById('wp-display-ammo');
+            if (currentWeapon === "VANDAL") {
+                wpName.innerText = "VANDAL AR";
+                wpAmmo.innerText = gameState.reloading ? "RELOADING" : `${gameState.currentAmmo} / ${gameState.reserve}`;
+            } else {
+                wpName.innerText = "TACTICAL KNIFE (+50% SPD)";
+                wpAmmo.innerText = "MELEE";
+            }
+            
+            const now = performance.now();
+            const statusLabel = document.getElementById('slide-status');
+            if (playerSlide.isSliding) statusLabel.innerText = "SLIDING...";
+            else if (now < playerSlide.cooldownTime) statusLabel.innerText = "SLIDE COOLDOWN";
+            else statusLabel.innerText = "SLIDE READY (Q)";
+        }
+
+        function resetEntireGame() {
+            gameState.hp = 100; gameState.currentAmmo = gameState.max; gameState.reserve = 90; gameState.reloading = false;
+            playerSlide.isSliding = false; currentPlayerHeight = STAND_HEIGHT;
+            moveKeys.forward = moveKeys.backward = moveKeys.left = moveKeys.right = false;
+            velocity.set(0, 0, 0);
+            controls.getObject().position.set(0, STAND_HEIGHT, 25);
+            currentWeapon = "VANDAL"; vandalMeshGroup.visible = true; knifeMeshGroup.visible = false;
+            updateHUD(); resetBotPosition(); createBarrels();
+            bullets.forEach(b => scene.remove(b.mesh)); bullets.length = 0;
+            botBullets.forEach(b => scene.remove(b.mesh)); botBullets.length = 0;
+            vfxList.forEach(v => scene.remove(v)); vfxList.length = 0;
+        }
+
+        function reloadWeapon() {
+            if (gameState.reloading || gameState.currentAmmo === gameState.max || gameState.reserve <= 0) return;
+            gameState.reloading = true; updateHUD();
+            setTimeout(() => {
+                const needed = gameState.max - gameState.currentAmmo; const toLoad = Math.min(needed, gameState.reserve);
+                gameState.currentAmmo += toLoad; gameState.reserve -= toLoad;
+                gameState.reloading = false; updateHUD();
+            }, 1200);
+        }
+
+        function showDamageNumber(position3D, damage, colorHex = '#ffffff', scale = 1) {
+            const vector = position3D.clone(); vector.project(camera);
+            const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+            const y = -(vector.y * 0.5 - 0.5) * window.innerHeight;
+            const dmgDiv = document.createElement('div');
+            dmgDiv.className = 'damage-text'; dmgDiv.innerText = damage;
+            dmgDiv.style.left = `${x}px`; dmgDiv.style.top = `${y}px`; dmgDiv.style.color = colorHex;
+            dmgDiv.style.fontSize = `${24 * scale}px`; document.body.appendChild(dmgDiv);
+            setTimeout(() => dmgDiv.remove(), 1000);
+        }
+
+        function explodeBarrel(barrelObj) {
+            barrelObj.isExploded = true; const expPos = barrelObj.mesh.position.clone(); scene.remove(barrelObj.mesh);
+            const expMesh = new THREE.Mesh(new THREE.SphereGeometry(4.0, 16, 16), new THREE.MeshBasicMaterial({ color: 0xff4500, wireframe: true, transparent: true, opacity: 0.6 }));
+            expMesh.position.copy(expPos); scene.add(expMesh); vfxList.push(expMesh);
+            setTimeout(() => { scene.remove(expMesh); const idx = vfxList.indexOf(expMesh); if(idx>-1) vfxList.splice(idx,1); }, 400);
+
+            const radius = 6.0; const pPos = controls.getObject().position; const distToPlayer = expPos.distanceTo(pPos);
+            if(distToPlayer < radius) {
+                const dmgToPlayer = Math.round((1 - distToPlayer/radius) * 60);
+                if(dmgToPlayer > 0) {
+                    gameState.hp -= dmgToPlayer; updateHUD(); showDamageNumber(pPos, "EXPLOSION: -" + dmgToPlayer, '#ff3300', 1.5);
+                    if(gameState.hp <= 0) { alert("BẠN BỊ THÙNG XĂNG NỔ CHẾT!"); resetEntireGame(); return; }
+                }
+            }
+            if(!botState.isDead) {
+                const bPos = botGroup.position; const distToBot = expPos.distanceTo(bPos);
+                if(distToBot < radius) {
+                    const dmgToBot = Math.round((1 - distToBot/radius) * 60);
+                    if(dmgToBot > 0) { botState.hp -= dmgToBot; showDamageNumber(bPos, "EXPLOSION: -" + dmgToBot, '#ffaa00', 1.5); checkBotDeath(); }
+                }
+            }
+        }
+
+        function checkBotDeath() {
+            if (botState.hp <= 0 && !botState.isDead) {
+                botState.isDead = true; botGroup.visible = false; hitTargets.forEach(t => t.position.y -= 200);
+                setTimeout(() => {
+                    botGroup.position.set((Math.random() - 0.5) * 40, 0, (Math.random() - 0.5) * 40);
+                    botGroup.position.x = THREE.MathUtils.clamp(botGroup.position.x, -37, 37);
+                    botGroup.position.z = THREE.MathUtils.clamp(botGroup.position.z, -37, 37);
+                    
+                    hitTargets.forEach(t => t.position.y += 200);
+                    botGroup.visible = true; botState.hp = 100; botState.isDead = false;
+                    botState.velocity.set(0,0,0); botState.currentMode = 'SEARCH';
+                    botState.isSliding = false; botState.ammo = 25; botState.isReloading = false; botState.weapon = "VANDAL";
+                    botState.hasLastKnown = false;
+                    botBodyMat.color.setHex(0xeb3b5a); botGroup.scale.set(1,1,1);
+                }, 2500);
+            }
+        }
+
+        window.addEventListener('mousedown', (e) => { if (e.button === 0) isMousePressed = true; });
+        window.addEventListener('mouseup', (e) => { if (e.button === 0) isMousePressed = false; });
+
+        function performPlayerAttack(time) {
+            if (!controls.isLocked) return;
+
+            if (currentWeapon === "VANDAL") {
+                if (gameState.currentAmmo <= 0 || gameState.reloading) return;
+                if (time - playerLastShotTime < playerFireRate) return;
+                playerLastShotTime = time;
+
+                gameState.currentAmmo--; updateHUD();
+                weaponGroup.position.z += isADS ? 0.04 : 0.08; weaponGroup.rotation.x -= isADS ? 0.015 : 0.04;
+                
+                const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+                const targetObjects = [...obstacles, ...hitTargets];
+                barrels.forEach(b => { if(!b.isExploded) targetObjects.push(b.mesh); });
+
+                const intersects = raycaster.intersectObjects(targetObjects);
+                if (intersects.length > 0) {
+                    const hitObj = intersects[0].object; const hitPoint = intersects[0].point;
+                    if(hitObj.name === "barrel") {
+                        const barrelObj = barrels.find(b => b.mesh === hitObj);
+                        if(barrelObj && !barrelObj.isExploded) {
+                            barrelObj.hp -= 12; showDamageNumber(hitPoint, "12", '#ffcc00', 1);
+                            if(barrelObj.hp <= 0) explodeBarrel(barrelObj);
+                        }
+                    }
+                    else if (hitObj.name === "head" && !botState.isDead) { showDamageNumber(hitPoint, 15, '#00ffcc', 1.4); botState.hp -= 15; checkBotDeath(); } 
+                    else if (hitObj.name === "body" && !botState.isDead) { showDamageNumber(hitPoint, 12, '#ffffff', 1); botState.hp -= 12; checkBotDeath(); }
+                }
+
+                const bullet = new THREE.Mesh(new THREE.SphereGeometry(0.04, 8, 8), new THREE.MeshBasicMaterial({ color: 0xfff700 }));
+                const startPos = new THREE.Vector3(); barrelMesh.getWorldPosition(startPos); bullet.position.copy(startPos);
+                const dir = new THREE.Vector3(); camera.getWorldDirection(dir); scene.add(bullet);
+                bullets.push({ mesh: bullet, dir: dir, speed: 220, born: performance.now() });
+
+                if (gameState.currentAmmo === 0) reloadWeapon();
+            } 
+            else if (currentWeapon === "KNIFE") {
+                if (time < knifeSwingEndTime) return;
+                knifeSwingEndTime = time + 200;
+                
+                weaponGroup.position.z -= 0.15; weaponGroup.rotation.y += 0.3;
+
+                const raycaster = new THREE.Raycaster(); raycaster.setFromCamera(new THREE.Vector2(0, 0), camera);
+                raycaster.far = 3.5;
+
+                const intersects = raycaster.intersectObjects(hitTargets);
+                if (intersects.length > 0 && !botState.isDead) {
+                    const hitPoint = intersects[0].point;
+                    const botForward = new THREE.Vector3(0, 0, -1).applyQuaternion(botGroup.quaternion).setY(0).normalize();
+                    const playerForward = new THREE.Vector3(); camera.getWorldDirection(playerForward); playerForward.setY(0).normalize();
+
+                    const dot = botForward.dot(playerForward);
+                    let dmg = 25; let isBackstab = false;
+                    if (dot > 0.55) { dmg = 75; isBackstab = true; }
+
+                    botState.hp -= dmg;
+                    if (isBackstab) showDamageNumber(hitPoint, "💥 BACKSTAB: 75", '#ff0055', 1.6);
+                    else showDamageNumber(hitPoint, "刀 25", '#ffffff', 1.1);
+                    checkBotDeath();
+                }
+            }
+        }
+
+        // --- VÒNG LẶP ENGINE CHÍNH ---
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = performance.now();
+            const delta = (time - prevTime) / 1000;
+
+            if (controls.isLocked) {
+                if (isMousePressed && currentWeapon === "VANDAL") performPlayerAttack(time);
+                if (isMousePressed && currentWeapon === "KNIFE" && time > knifeSwingEndTime) performPlayerAttack(time);
+
+                camera.fov = THREE.MathUtils.lerp(camera.fov, targetFov, 0.15); camera.updateProjectionMatrix();
+                const targetPosADS = isADS ? posADS : posHipfire;
+                weaponGroup.position.lerp(targetPosADS, 0.15);
+                weaponGroup.rotation.x = THREE.MathUtils.lerp(weaponGroup.rotation.x, 0, 0.2);
+                weaponGroup.rotation.y = THREE.MathUtils.lerp(weaponGroup.rotation.y, 0, 0.15);
+                weaponGroup.position.z = THREE.MathUtils.lerp(weaponGroup.position.z, targetPosADS.z, 0.2);
+
+                velocity.x -= velocity.x * 10.0 * delta; velocity.z -= velocity.z * 10.0 * delta; velocity.y -= 9.8 * 12.0 * delta;
+                
+                if (playerSlide.isSliding) {
+                    if (time > playerSlide.endTime) {
+                        playerSlide.isSliding = false; currentPlayerHeight = STAND_HEIGHT;
+                    } else {
+                        const pct = (time - playerSlide.startTime) / (playerSlide.endTime - playerSlide.startTime);
+                        const slideSpeed = THREE.MathUtils.lerp(46, 18, pct);
+                        velocity.z = -playerSlide.direction.z * slideSpeed;
+                        velocity.x = -playerSlide.direction.x * slideSpeed;
+                        currentPlayerHeight = SLIDE_HEIGHT;
+                    }
+                    updateHUD();
+                } else {
+                    direction.z = Number(moveKeys.forward) - Number(moveKeys.backward); 
+                    direction.x = Number(moveKeys.right) - Number(moveKeys.left); 
+                    direction.normalize();
+                    
+                    // NÂNG CẤP: Cơ chế trọng lượng - Cầm dao tăng 50% tốc chạy (160 -> 240)
+                    let speedMulti = isADS ? 70.0 : 160.0;
+                    if (currentWeapon === "KNIFE") speedMulti = 240.0; 
+
+                    if (moveKeys.forward || moveKeys.backward) velocity.z -= direction.z * speedMulti * delta;
+                    if (moveKeys.left || moveKeys.right) velocity.x -= direction.x * speedMulti * delta;
+                }
+
+                const pObj = controls.getObject(); const oldPos = pObj.position.clone();
+                controls.moveRight(-velocity.x * delta); controls.moveForward(-velocity.z * delta); pObj.position.y += (velocity.y * delta);
+                pObj.position.y = THREE.MathUtils.lerp(pObj.position.y, (pObj.position.y - STAND_HEIGHT) + currentPlayerHeight, 0.2);
+
+                let floorY = 0; let hitWall = false;
+                const pBox = new THREE.Box3(
+                    new THREE.Vector3(pObj.position.x - 0.45, pObj.position.y - currentPlayerHeight, pObj.position.z - 0.45), 
+                    new THREE.Vector3(pObj.position.x + 0.45, pObj.position.y + 0.4, pObj.position.z + 0.45)
+                );
+                for (let i=0; i<obstacles.length; i++) {
+                    const obsBox = new THREE.Box3().setFromObject(obstacles[i]);
+                    if (pBox.intersectsBox(obsBox)) { 
+                        const oldBottom = oldPos.y - (playerSlide.isSliding ? SLIDE_HEIGHT : STAND_HEIGHT);
+                        if (oldBottom >= obsBox.max.y - 0.25) { if (obsBox.max.y > floorY) floorY = obsBox.max.y; } 
+                        else { if (pObj.position.y - currentPlayerHeight < obsBox.max.y - 0.05) hitWall = true; }
+                    }
+                }
+                if (hitWall) { pObj.position.x = oldPos.x; pObj.position.z = oldPos.z; }
+                if (pObj.position.y < floorY + currentPlayerHeight) { velocity.y = 0; pObj.position.y = floorY + currentPlayerHeight; canJump = true; }
+                
+                // --- XỬ LÝ LOGIC BOT AI THÔNG MINH - ANTI-CHEAT TRACKING ---
+                if (!botState.isDead) {
+                    const playerPos = pObj.position.clone(); const botPos = botGroup.position.clone();
+                    const botEyePos = botPos.clone().setY(botPos.y + (botState.isSliding ? 0.9 : 1.8));
+                    const isPlayerMoving = (moveKeys.forward || moveKeys.backward || moveKeys.left || moveKeys.right || playerSlide.isSliding);
+                    
+                    // Kiểm tra tầm nhìn thực tế (Line of Sight - LoS) bằng Raycast vật lý
+                    const botToPlayerDir = new THREE.Vector3().subVectors(playerPos, botEyePos).normalize();
+                    const sightHits = new THREE.Raycaster(botEyePos, botToPlayerDir).intersectObjects(obstacles);
+                    let canSeePlayer = true; 
+                    if(sightHits.length > 0 && sightHits[0].distance < botEyePos.distanceTo(playerPos)) canSeePlayer = false;
+
+                    // Quyết định tọa độ đích thực tế của Bot dựa trên Tầm Nhìn
+                    let currentTargetPos = new THREE.Vector3();
+
+                    if (canSeePlayer) {
+                        // Thấy người chơi: Tấn công trực diện, cập nhật vị trí cuối cùng liên tục
+                        botState.currentMode = 'ATTACK';
+                        botState.lastKnownPlayerPos.copy(playerPos);
+                        botState.hasLastKnown = true;
+                        currentTargetPos.copy(playerPos);
+                    } else {
+                        // Bị khuất tầm nhìn: Không được phép gian lận tọa độ
+                        if (botState.hasLastKnown) {
+                            // Chế độ INVESTIGATE: Chạy nhanh tới vị trí cuối cùng nhìn thấy bạn
+                            botState.currentMode = 'INVESTIGATE';
+                            currentTargetPos.copy(botState.lastKnownPlayerPos);
+                            
+                            // Nếu đã tới điểm cuối cùng mà vẫn không thấy, hủy dấu vết, đổi sang tìm ngẫu nhiên
+                            if (botPos.distanceTo(botState.lastKnownPlayerPos) < 2.5) {
+                                botState.hasLastKnown = false;
+                                const rx = (Math.random() - 0.5) * 65; const rz = (Math.random() - 0.5) * 65;
+                                botState.searchTargetPos.set(rx, 0, rz);
+                                botState.searchTimer = time + 2500;
+                            }
+                        } else {
+                            // Chế độ SEARCH: Đi tuần tra lùng sục ngẫu nhiên các khu vực trên map
+                            botState.currentMode = 'SEARCH';
+                            if (time > botState.searchTimer || botPos.distanceTo(botState.searchTargetPos) < 2.5) {
+                                const rx = (Math.random() - 0.5) * 65; const rz = (Math.random() - 0.5) * 65;
+                                botState.searchTargetPos.set(rx, 0, rz);
+                                botState.searchTimer = time + 3000 + Math.random() * 2000;
+                            }
+                            currentTargetPos.copy(botState.searchTargetPos);
+                        }
+                    }
+
+                    // Quay mặt chuẩn xác về hướng đích đến thực tế của nó (Không quay về phía người chơi nếu bị khuất tường)
+                    const targetAngle = Math.atan2(currentTargetPos.x - botPos.x, currentTargetPos.z - botPos.z);
+                    let angleDiff = targetAngle - botGroup.rotation.y;
+                    angleDiff = Math.atan2(Math.sin(angleDiff), Math.cos(angleDiff));
+                    botGroup.rotation.y += angleDiff * 0.08;
+
+                    if (botState.isReloading && time > botState.reloadEndTime) {
+                        botState.ammo = botState.maxAmmo; botState.isReloading = false;
+                    }
+
+                    botState.velocity.x -= botState.velocity.x * 8.0 * delta; botState.velocity.z -= botState.velocity.z * 8.0 * delta; botState.velocity.y -= 9.8 * 12.0 * delta;
+
+                    if (botState.isSliding) {
+                        if (time > botState.slideEndTime) { botState.isSliding = false; botGroup.scale.set(1, 1, 1); }
+                        else { const bSlideSpd = 35; botState.velocity.x = botState.slideDir.x * bSlideSpd; botState.velocity.z = botState.slideDir.z * bSlideSpd; }
+                    } else {
+                        // Tính toán tư duy di chuyển định kỳ
+                        if (time > botState.nextModeChange) {
+                            botState.nextModeChange = time + 300 + Math.random() * 400;
+                            const distToTarget = botPos.distanceTo(currentTargetPos);
+                            
+                            if (botState.currentMode === 'ATTACK') {
+                                // Logic cận chiến xáp lá cà khi thấy trực diện người chơi gần
+                                if (botState.weapon === "VANDAL" && distToTarget < 9 && Math.random() < 0.4) {
+                                    botState.weapon = "KNIFE"; botBodyMat.color.setHex(0x8e44ad); // Tím: Dao
+                                } else if (botState.weapon === "KNIFE" && distToTarget > 14 && Math.random() < 0.5) {
+                                    botState.weapon = "VANDAL"; botBodyMat.color.setHex(0xeb3b5a); // Đỏ: Súng
+                                }
+
+                                if (botState.weapon === "KNIFE") {
+                                    botState.desiredMoveDir.copy(botToPlayerDir).setY(0).normalize();
+                                } else {
+                                    // Né đạn đảo hướng (Strafe) khi đang bắn nhau
+                                    const sideDir = new THREE.Vector3(-botToPlayerDir.z, 0, botToPlayerDir.x).normalize();
+                                    const strafeDirection = (Math.random() - 0.5) > 0 ? 1.5 : -1.5;
+                                    botState.desiredMoveDir.copy(sideDir).multiplyScalar(strafeDirection);
+                                    if(distToTarget > 15) botState.desiredMoveDir.addScaledVector(botToPlayerDir, 0.4);
+                                    botState.desiredMoveDir.setY(0).normalize();
+                                }
+                            } else {
+                                // Khi đang đi ĐIỀU TRA hoặc LÙNG SỤC: Chủ động rút Dao chạy cho nhanh, thỉnh thoảng đổi súng phòng vệ
+                                if (Math.random() < 0.25) {
+                                    botState.weapon = (Math.random() < 0.6) ? "KNIFE" : "VANDAL";
+                                    if(botState.weapon === "KNIFE") botBodyMat.color.setHex(0x8e44ad);
+                                    else botBodyMat.color.setHex(0xeb3b5a);
+                                }
+                                botState.desiredMoveDir.subVectors(currentTargetPos, botPos).setY(0).normalize();
+                            }
+
+                            if (!botState.isReloading && time > botState.nextSlideAllowTime && Math.random() < 0.2) {
+                                botState.isSliding = true; botState.slideEndTime = time + 250;
+                                botState.nextSlideAllowTime = time + 4000;
+                                botState.slideDir.copy(botState.desiredMoveDir).normalize();
+                                botGroup.scale.set(1, 0.5, 1);
+                            }
+                        }
+
+                        if (botState.desiredMoveDir.lengthSq() > 0) {
+                            // NÂNG CẤP: Tốc chạy Bot tăng 50% khi cầm dao (Súng: 110 -> Dao: 165)
+                            const moveSpeed = (botState.weapon === "KNIFE") ? 165.0 : 110.0;
+                            botState.velocity.x -= botState.desiredMoveDir.x * moveSpeed * delta;
+                            botState.velocity.z -= botState.desiredMoveDir.z * moveSpeed * delta;
+                        }
+                    }
+
+                    const oldBotPos = botGroup.position.clone(); botGroup.position.addScaledVector(botState.velocity, delta);
+                    
+                    botGroup.position.x = THREE.MathUtils.clamp(botGroup.position.x, -38.2, 38.2);
+                    botGroup.position.z = THREE.MathUtils.clamp(botGroup.position.z, -38.2, 38.2);
+
+                    let botFloorY = 0; let botHitWall = false;
+                    const botFeetBox = new THREE.Box3(new THREE.Vector3(botGroup.position.x - 0.5, botGroup.position.y, botGroup.position.z - 0.5), new THREE.Vector3(botGroup.position.x + 0.5, botGroup.position.y + 1.8, botGroup.position.z + 0.5));
+                    for (let i = 0; i < obstacles.length; i++) {
+                        const obsBox = new THREE.Box3().setFromObject(obstacles[i]);
+                        if (botFeetBox.intersectsBox(obsBox)) { if (oldBotPos.y >= obsBox.max.y - 0.25) botFloorY = obsBox.max.y; else botHitWall = true; }
+                    }
+                    const botIsOnGround = (botGroup.position.y <= botFloorY + 0.05);
+                    
+                    // AI Parkour thông minh: Nếu đi lùng sục gặp chướng ngại vật cản địa, tự động nhảy lên để vượt qua
+                    if (botHitWall && botIsOnGround) { botState.velocity.y = 26; botGroup.position.x = oldBotPos.x; botGroup.position.z = oldPos.z; }
+                    else if (botHitWall) { botGroup.position.x = oldBotPos.x; botGroup.position.z = oldBotPos.z; }
+                    if (botGroup.position.y < botFloorY) { botState.velocity.y = 0; botGroup.position.y = botFloorY; }
+
+                    // HÀNH ĐỘNG TẤN CÔNG (Chỉ kích hoạt khi có Tầm nhìn canSeePlayer thực tế)
+                    if (canSeePlayer && !botState.isReloading) {
+                        const currentDist = botPos.distanceTo(playerPos);
+                        if (botState.weapon === "KNIFE") {
+                            if (currentDist < 2.8 && time - botState.lastKnifeAttack > 500) {
+                                botState.lastKnifeAttack = time; gameState.hp -= 25; updateHUD();
+                                showDamageNumber(pPos, "BOT KNIFE SLASH: -25", '#ff3300', 1.2);
+                                document.getElementById('hud').style.backgroundColor="rgba(255,0,0,0.3)"; 
+                                setTimeout(()=>document.getElementById('hud').style.backgroundColor="transparent",100);
+                                if(gameState.hp <= 0) { alert("BẠN ĐÃ BỊ BOT CẦM DAO ĐÂM HẠ GỤC!"); resetEntireGame(); }
+                            }
+                        } else {
+                            if (botState.ammo > 0) {
+                                if (time - botState.lastShot > botState.fireRate) {
+                                    botState.lastShot = time; botState.ammo--;
+                                    const eBullet = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({ color: 0xff4655 }));
+                                    eBullet.position.copy(botEyePos); scene.add(eBullet);
+                                    const finalDir = botToPlayerDir.clone();
+                                    let errorMultiplier = isPlayerMoving ? 0.07 : 0.04; if(botState.isSliding) errorMultiplier += 0.03;
+                                    finalDir.x += (Math.random() - 0.5) * errorMultiplier; finalDir.y += (Math.random() - 0.5) * errorMultiplier; finalDir.z += (Math.random() - 0.5) * errorMultiplier; finalDir.normalize();
+                                    botBullets.push({ mesh: eBullet, dir: finalDir, speed: 75, born: time });
+                                }
+                            } else {
+                                if (Math.random() < 0.5) {
+                                    botState.isReloading = true; botState.reloadEndTime = time + 1600;
+                                    showDamageNumber(botEyePos, "BOT RELOADING...", '#ece8e1', 0.9);
+                                } else {
+                                    botState.weapon = "KNIFE"; botBodyMat.color.setHex(0x8e44ad);
+                                    showDamageNumber(botEyePos, "BOT RUSHES WITH KNIFE!", '#8e44ad', 1.1);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            for (let i=bullets.length-1; i>=0; i--) { const b=bullets[i]; b.mesh.position.addScaledVector(b.dir, b.speed*delta); if(time-b.born>1000){scene.remove(b.mesh);bullets.splice(i,1);}}
+            
+            const pPos = controls.getObject().position;
+            for (let i=botBullets.length-1; i>=0; i--) {
+                const b=botBullets[i]; b.mesh.position.addScaledVector(b.dir, b.speed*delta);
+                if(b.mesh.position.distanceTo(pPos) < (playerSlide.isSliding ? 1.0 : 1.4)) {
+                    gameState.hp -= 12; updateHUD(); scene.remove(b.mesh); botBullets.splice(i, 1);
+                    document.getElementById('hud').style.backgroundColor="rgba(255,0,0,0.3)"; setTimeout(()=>document.getElementById('hud').style.backgroundColor="transparent",100);
+                    if(gameState.hp <= 0) { alert("BẠN ĐÃ BỊ HẠ GỤC!"); resetEntireGame(); }
+                    continue;
+                }
+                for(let j=0; j<barrels.length; j++) {
+                    const bar = barrels[j];
+                    if(!bar.isExploded && b.mesh.position.distanceTo(bar.mesh.position) < 0.8) {
+                        bar.hp -= 12; scene.remove(b.mesh); botBullets.splice(i, 1);
+                        if(bar.hp <= 0) explodeBarrel(bar); break;
+                    }
+                }
+                if(time-b.born>2000 && botBullets[i]){scene.remove(b.mesh);botBullets.splice(i,1);}
+            }
+            prevTime = time; renderer.render(scene, camera);
+        }
+        window.addEventListener('resize', () => { camera.aspect=window.innerWidth/window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); });
+        animate();
+    </script>
+</body>
+</html>

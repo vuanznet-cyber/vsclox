@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sol's RNG: Ultimate Automation</title>
+    <style>
+        :root {
+            --ui-bg: rgba(10, 10, 10, 0.95);
+            --text-gold: #ffcc00;
+            --common: #bdc3c7;
+            --rare: #3498db;
+            --epic: #a29bfe;
+            --legendary: #fdcb6e;
+            --mythic: #ff7675;
+        }
+
+        body, html { 
+            margin: 0; padding: 0; width: 100%; height: 100%; 
+            overflow: hidden; font-family: 'Segoe UI', sans-serif; 
+            background: #000; color: white; user-select: none;
+        }
+
+        /* --- WORLD & PLAYER --- */
+        #game-container {
+            width: 5000px; height: 5000px;
+            background-color: #111;
+            background-image: 
+                linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px);
+            background-size: 100px 100px;
+            position: absolute; transition: background 2s ease;
+        }
+
+        #player {
+            width: 50px; height: 50px; background: #fff;
+            position: absolute; border-radius: 12px;
+            z-index: 100; box-shadow: 0 0 20px rgba(255,255,255,0.3);
+            display: flex; align-items: center; justify-content: center;
+        }
+
+        #aura-visual {
+            position: absolute; width: 180px; height: 180px;
+            border-radius: 50%; pointer-events: none;
+            z-index: 90; opacity: 0.8; transition: all 0.5s ease;
+        }
+
+        .workshop-area {
+            position: absolute; width: 400px; height: 400px; border: 5px dashed #444;
+            background: rgba(50, 50, 50, 0.2);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            font-weight: bold; color: #666;
+        }
+
+        /* --- HOẠT ẢNH DÀNH CHO BIẾN THỂ VÀ AURA MỚI --- */
+        @keyframes aura-rotate { 0% { transform: rotate(0deg) scale(1); } 50% { transform: rotate(180deg) scale(1.1); } 100% { transform: rotate(360deg) scale(1); } }
+        @keyframes aura-glitch { 0% { clip-path: inset(10% 0 30% 0); transform: skew(-5deg); } 50% { clip-path: inset(40% 0 10% 0); transform: skew(5deg); } 100% { clip-path: inset(20% 0 50% 0); transform: skew(0deg); } }
+        @keyframes aura-pulse-fast { 0% { transform: scale(0.92); opacity: 0.5; } 100% { transform: scale(1.25); opacity: 0.9; } }
+        @keyframes aura-vortex { 0% { transform: rotate(0deg); border-radius: 40% 60% 70% 30%; } 100% { transform: rotate(-360deg); border-radius: 70% 30% 52% 48%; } }
+        @keyframes magnetic-pulse { 0% { transform: scale(0.9) rotate(0deg); border-radius: 50%; } 50% { transform: scale(1.15) rotate(180deg); border-radius: 35%; } 100% { transform: scale(0.9) rotate(360deg); border-radius: 50%; } }
+
+        /* --- UI PANELS --- */
+        #hud { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 500; }
+        #hud * { pointer-events: auto; }
+
+        .stat-box {
+            position: absolute; top: 20px; left: 20px;
+            background: var(--ui-bg); padding: 15px; border-radius: 10px;
+            border-left: 4px solid var(--text-gold); min-width: 220px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+        }
+
+        .weather-box {
+            position: absolute; top: 20px; right: 20px;
+            background: var(--ui-bg); padding: 15px; border-radius: 10px; text-align: right;
+        }
+
+        .main-controls {
+            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
+            display: flex; gap: 12px; background: var(--ui-bg); padding: 15px 25px; border-radius: 50px;
+            border: 1px solid #333;
+        }
+
+        /* --- RUNNING OVERLAY WIDGET --- */
+        #roll-overlay {
+            position: fixed; bottom: 120px; right: 20px; width: 350px; height: 160px;
+            background: rgba(15, 15, 15, 0.95); z-index: 400; display: none;
+            flex-direction: column; align-items: center; justify-content: center;
+            border: 2px solid #444; border-radius: 15px; box-shadow: 0 8px 32px rgba(0,0,0,0.8);
+            padding: 15px;
+        }
+
+        #roll-sequence { height: 40px; overflow: hidden; font-size: 26px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; justify-content: center; }
+        .rolling-text { animation: slideUpSmall 0.08s infinite linear; }
+        @keyframes slideUpSmall { from { transform: translateY(0); } to { transform: translateY(-28px); } }
+
+        #final-result-display { font-size: 30px; font-weight: 900; text-transform: uppercase; text-shadow: 0 0 20px currentColor; display: none; text-align: center; animation: zoomIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes zoomIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* --- MODALS --- */
+        .modal {
+            display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 850px; height: 650px; background: #0a0a0a; border: 1px solid #333;
+            z-index: 1100; border-radius: 20px; padding: 30px; box-shadow: 0 0 100px #000;
+        }
+
+        .grid-container {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px; max-height: 410px; overflow-y: auto; padding: 15px;
+            background: #111; border-radius: 10px;
+        }
+
+        .card { background: #1a1a1a; border: 1px solid #333; padding: 15px; border-radius: 12px; text-align: center; transition: 0.3s; }
+        .card:hover { border-color: var(--text-gold); transform: translateY(-5px); }
+
+        .settings-row { display: flex; justify-content: space-between; align-items: center; padding: 12px; border-bottom: 1px solid #222; }
+        .toggle-keep { background: #2ed573 !important; }
+        .toggle-delete { background: #ff4757 !important; }
+
+        /* --- BUTTONS --- */
+        button { padding: 12px 20px; cursor: pointer; border: none; border-radius: 8px; background: #252525; color: #fff; font-weight: bold; transition: 0.2s; }
+        button:hover { background: #353535; }
+        #btn-roll { background: #ff4757; font-size: 1.6rem; padding: 10px 50px; border-radius: 30px; }
+        .active-btn { background: #2ed573 !important; box-shadow: 0 0 15px rgba(46, 213, 115, 0.4); }
+
+        .tab-btn { background: #151515; border: 1px solid #333; padding: 10px 25px; border-radius: 8px 8px 0 0; }
+        .tab-btn.active { background: #ff4757; border-color: #ff4757; }
+
+        .potion-entity {
+            position: absolute; width: 40px; height: 40px; border-radius: 50%;
+            cursor: pointer; z-index: 80; filter: drop-shadow(0 0 10px currentColor);
+            animation: floatPot 2s infinite ease-in-out;
+        }
+        @keyframes floatPot { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-15px); } }
+
+        #cutscene { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 2000; flex-direction: column; align-items: center; justify-content: center; }
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <div id="player"><div id="aura-visual"></div></div>
+        <div class="workshop-area" id="ws-trigger" style="left: 2400px; top: 2400px; border-color: #444;">
+            <div style="font-size: 2rem;">🛠️</div>WORKSHOP & CRAFT
+        </div>
+        <div class="workshop-area" id="alc-trigger" style="left: 3000px; top: 2400px; border-color: #9b59b6;">
+            <div style="font-size: 2rem;">🧪</div>ALCHEMY LAB
+        </div>
+    </div>
+
+    <div id="hud">
+        <div class="stat-box">
+            <div style="font-size: 0.75rem; color: #888; letter-spacing: 1px;">PLAYER DATA</div>
+            <div style="margin-top: 5px;">Rolls: <span id="st-rolls" style="font-weight: bold;">0</span></div>
+            <div>Luck: <span id="st-luck" style="color: #2ed573;">1.0</span></div>
+            <div style="margin-top: 5px;">Best: <span id="st-best" style="color: var(--text-gold);">None</span></div>
+        </div>
+
+        <div class="weather-box">
+            <div id="wt-time" style="font-weight: bold; letter-spacing: 1px;">DAY</div>
+            <div id="wt-cond" style="color: #3498db; font-size: 0.9rem;">CLEAR</div>
+            <div id="active-potions" style="margin-top: 8px; display: flex; flex-direction: column; gap: 4px;"></div>
+        </div>
+
+        <div class="main-controls">
+            <button id="btn-roll" onclick="handleRoll()">ROLL</button>
+            <button id="btn-auto" onclick="toggleAuto()">AUTO: OFF</button>
+            <button id="btn-quick" onclick="toggleQuick()">QUICK: OFF</button>
+            <button onclick="openModal('modal-inv')">BAG</button>
+            <button onclick="openModal('modal-settings')">⚙️</button>
+            <button id="btn-ws" style="display: none; background: #e67e22;" onclick="openModal('modal-ws')">CRAFT</button>
+            <button id="btn-alc" style="display: none; background: #9b59b6;" onclick="openModal('modal-alchemy')">ALCHEMY</button>
+        </div>
+    </div>
+
+    <div id="roll-overlay">
+        <div id="roll-status" style="color: #666; margin-bottom: 8px; font-weight: bold; letter-spacing: 2px; font-size: 0.75rem;">SEARCHING...</div>
+        <div id="roll-sequence"><div class="rolling-text" id="roll-ticker">COMMON</div></div>
+        <div id="final-result-display">AURA NAME</div>
+        <div id="roll-progress-container" style="width: 280px; height: 6px; background: #111; margin-top: 15px; border-radius: 10px; overflow: hidden;">
+            <div id="roll-bar" style="width: 0%; height: 100%; background: #ff4757; transition: width 0.1s;"></div>
+        </div>
+    </div>
+
+    <!-- INVENTORY MODAL -->
+    <div id="modal-inv" class="modal">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 15px;">
+            <h2 style="margin: 0;">INVENTORY</h2>
+            <div style="display: flex; gap: 10px;">
+                <button onclick="renderInv('auras')">AURAS</button>
+                <button onclick="renderInv('items')">ITEMS</button>
+            </div>
+        </div>
+        <div id="sort-controls" style="margin-bottom: 12px; display: flex; gap: 8px; align-items: center; font-size: 0.85rem; background: #111; padding: 8px 15px; border-radius: 8px;">
+            <span style="color: #888;">Sắp xếp Aura:</span>
+            <button onclick="setSort('order')" id="btn-sort-order" class="active-btn" style="padding: 5px 12px; font-size: 0.75rem;">Mới nhất</button>
+            <button onclick="setSort('rarity')" id="btn-sort-rarity" style="padding: 5px 12px; font-size: 0.75rem;">Độ hiếm</button>
+            <button onclick="setSort('alphabet')" id="btn-sort-alphabet" style="padding: 5px 12px; font-size: 0.75rem;">A-Z</button>
+        </div>
+        <div id="inv-grid" class="grid-container"></div>
+        <button style="margin-top: 20px; width: 100%;" onclick="closeModal('modal-inv')">CLOSE</button>
+    </div>
+
+    <!-- ALCHEMY LAB MODAL -->
+    <div id="modal-alchemy" class="modal">
+        <h2>🧪 ALCHEMY BREWING</h2>
+        <div id="alc-grid" class="grid-container" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); max-height: 460px;"></div>
+        <button style="margin-top: 20px; width: 100%;" onclick="closeModal('modal-alchemy')">CLOSE</button>
+    </div>
+
+    <!-- SETTINGS MODAL -->
+    <div id="modal-settings" class="modal">
+        <h2>SETTINGS & AUTO-DELETE</h2>
+        <div id="settings-list" style="max-height: 450px; overflow-y: auto; background: #111; border-radius: 10px;"></div>
+        <button style="margin-top: 20px; width: 100%;" onclick="closeModal('modal-settings')">SAVE & CLOSE</button>
+    </div>
+
+    <!-- WORKSHOP MODAL (GEARS & ITEMS TABS) -->
+    <div id="modal-ws" class="modal">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <div style="display: flex;">
+                <button class="tab-btn active" id="tab-gears" onclick="switchWsTab('gears')">GĂNG TAY (GEARS)</button>
+                <button class="tab-btn" id="tab-items" onclick="switchWsTab('items')">VẬT PHẨM (ITEMS)</button>
+            </div>
+            <!-- AUTO ADD TOGGLE CONTROLLER -->
+            <div>
+                <button id="btn-toggle-autoadd" class="active-btn" onclick="toggleAutoAddState()" style="padding: 8px 16px; font-size: 0.85rem;">AUTO ADD MATERIAL: ON</button>
+            </div>
+        </div>
+        <div id="ws-content-grid" class="grid-container" style="display: flex; flex-direction: column; gap: 15px; max-height: 450px;"></div>
+        <button style="margin-top: 20px; width: 100%;" onclick="closeModal('modal-ws')">CLOSE</button>
+    </div>
+
+    <!-- CUTSCENE -->
+    <div id="cutscene">
+        <h2 id="cs-chance" style="letter-spacing: 15px; color: #333;">1/1,000,000</h2>
+        <h1 id="cs-name" style="font-size: 80px; margin: 30px 0; text-align: center;">AURA NAME</h1>
+        <button onclick="closeCutscene()" style="padding: 15px 60px; font-size: 1.5rem;">CLAIM</button>
+    </div>
+
+    <script>
+        /* --- CONFIGURATION METADATA --- */
+        const AURAS = [
+            { name: "Common", chance: 2, color: "#bdc3c7" },
+            { name: "Uncommon", chance: 4, color: "#2ecc71" },
+            { name: "Good", chance: 5, color: "#9b59b6" },
+            { name: "Rare", chance: 8, color: "#3498db" },
+            { name: "Unusual", chance: 15, color: "#f1c40f" },
+            { name: "Rare+", chance: 32, color: "#e67e22" },
+            { name: "Epic", chance: 64, color: "#e74c3c" },
+            { name: "Gilded", chance: 256, color: "#ffd700" },
+            { name: "Jackpot", chance: 777, color: "#ff0077" },
+            { name: "Magnetic", chance: 2048, color: "#00ecff" }, // NEW AURA
+            { name: "Divinus", chance: 32, color: "#ffffff", mutation: { name: "Divinus: Angel", chance: 120000, color: "#fffeb3" } }, // MUTATION
+            { name: "Solar", chance: 50000, color: "#f39c12", boost: "Day", mutation: { name: "Solar: Flare", chance: 450000, color: "#ff3c00" } }, // MUTATION
+            { name: "Lunar", chance: 50000, color: "#95a5a6", boost: "Night" },
+            { name: "Permafrost", chance: 24500, color: "#00d4ff", boost: "Rainy" },
+            { name: "Windstorm", chance: 30000, color: "#ffffff", boost: "Windy" },
+            { name: "Velocity", chance: 7777777, color: "#00ff88" },
+            { name: "Celestial", chance: 350000, color: "#3d0066" },
+            { name: "Hades", chance: 6666666, color: "#ff2200" },
+            { name: "Matrix", chance: 35000000, color: "#00ff00" },
+            { name: "Sovereign", chance: 500000000, color: "#9b59b6" }
+        ];
+
+        const GEARS = [
+            { id: "g1", name: "Basic Gauntlet", luck: 0.5, speed: 0.05, req: { "Common": 10, "Uncommon": 5, "Rare": 2 } },
+            { id: "g2", name: "Luck Glove", luck: 1.5, speed: 0.1, req: { "Unusual": 8, "Rare+": 5, "Gilded": 1 } },
+            { id: "g3", name: "Solar Device", luck: 3.0, speed: 0.2, req: { "Solar": 1, "Epic": 10, "Jackpot": 1 } },
+            { id: "g6", name: "Sovereign Infinity", luck: 45.0, speed: 0.8, req: { "Magnetic": 3, "Celestial": 1, "Jackpot": 5 } }
+        ];
+
+        // NEW CRAFTABLE ITEMS CONFIG
+        const CRAFT_ITEMS = [
+            { id: "i1", name: "Magnet", desc: "🧲 Thu hoạch tức thì toàn bộ Bình thuốc xuất hiện trên bản đồ.", req: { "Magnetic": 1, "Common": 15, "Rare": 5 } },
+            { id: "i2", name: "Biome Randomizer", desc: "🌀 Xáo trộn dòng thời gian, đổi ngẫu nhiên Thời tiết/Biome ngay lập tức.", req: { "Magnetic": 1, "Windstorm": 1, "Unusual": 8 } }
+        ];
+
+        const POTIONS = {
+            "Lucky Potion": { luck: 1, duration: 60, color: "#2ecc71", type: "duration" },
+            "Fortune III": { luck: 10, duration: 120, color: "#d35400", type: "duration" },
+            "Speed Potion": { speed: 0.2, duration: 60, color: "#00d4ff", type: "duration" },
+            "Ultra Potion": { luck: 50000, color: "#ff00ff", type: "instant" },    // REWORKED TO INSTANT
+            "Sovereign Brew": { luck: 1000000, color: "#a29bfe", type: "instant" }, // REWORKED TO INSTANT
+            "Magnet": { type: "special" },
+            "Biome Randomizer": { type: "special" }
+        };
+
+        const ALCHEMY_RECIPES = [
+            { id: "al1", name: "Fortune III", reqItems: { "Lucky Potion": 3 }, reqAuras: { "Common": 5 }, result: "Fortune III" },
+            { id: "al4", name: "Ultra Potion", reqItems: { "Fortune III": 2 }, reqAuras: { "Gilded": 1, "Magnetic": 1 }, result: "Ultra Potion" },
+            { id: "al5", name: "Sovereign Brew", reqItems: { "Ultra Potion": 1 }, reqAuras: { "Magnetic": 3, "Solar": 1 }, result: "Sovereign Brew" }
+        ];
+
+        /* --- STATE CORE --- */
+        let state = {
+            pos: { x: 2575, y: 2575 }, rolls: 0, best: 0,
+            baseLuck: 0, rollSpeed: 0,
+            inventory: [],
+            items: { "Lucky Potion": 3, "Speed Potion": 3, "Magnet": 0, "Biome Randomizer": 0 },
+            craftProgress: {}, 
+            autoDelete: {}, 
+            activeEffects: [],
+            highTierBuff: null, // Lưu trữ dạng: { name: "Ultra Potion", luck: 50000 }
+            equippedAura: "", 
+            sortType: "order",
+            currentWsTab: "gears",
+            autoAddToggle: true // Mặc định bật auto add nguyên liệu
+        };
+
+        let flags = { isRolling: false, auto: false, quick: false };
+        let world = { time: "Day", weather: "Clear" };
+        let keys = {};
+
+        AURAS.forEach(a => {
+            state.autoDelete[a.name] = false;
+            if(a.mutation) state.autoDelete[a.mutation.name] = false;
+        });
+
+        /* --- ENGINE LOOP --- */
+        function moveLoop() {
+            let spd = 7;
+            if (state.equippedAura === "Velocity") spd *= 1.77;
+
+            if (keys['w'] || keys['arrowup']) state.pos.y -= spd;
+            if (keys['s'] || keys['arrowdown']) state.pos.y += spd;
+            if (keys['a'] || keys['arrowleft']) state.pos.x -= spd;
+            if (keys['d'] || keys['arrowright']) state.pos.x += spd;
+
+            state.pos.x = Math.max(0, Math.min(4950, state.pos.x));
+            state.pos.y = Math.max(0, Math.min(4950, state.pos.y));
+
+            const pl = document.getElementById('player');
+            const map = document.getElementById('game-container');
+            pl.style.transform = `translate(${state.pos.x}px, ${state.pos.y}px)`;
+            map.style.transform = `translate(${-state.pos.x + window.innerWidth/2}px, ${-state.pos.y + window.innerHeight/2}px)`;
+
+            let distWS = Math.sqrt(Math.pow(state.pos.x - 2600, 2) + Math.pow(state.pos.y - 2600, 2));
+            document.getElementById('btn-ws').style.display = (distWS < 250) ? 'block' : 'none';
+
+            let distAlc = Math.sqrt(Math.pow(state.pos.x - 3200, 2) + Math.pow(state.pos.y - 2600, 2));
+            document.getElementById('btn-alc').style.display = (distAlc < 250) ? 'block' : 'none';
+
+            requestAnimationFrame(moveLoop);
+        }
+
+        /* --- LUCK & ROLL SYSTEM --- */
+        function getLuck() {
+            let bonus = (state.rolls % 10 === 0 && state.rolls > 0) ? 2 : 1;
+            let durationPotLuck = state.activeEffects.reduce((a, b) => a + (b.luck || 0), 0);
+            let highTierLuck = state.highTierBuff ? state.highTierBuff.luck : 0; // Hấp thụ siêu buff một lần
+            
+            return (1 + state.baseLuck + durationPotLuck) * bonus + highTierLuck;
+        }
+
+        function handleRoll() {
+            if (flags.isRolling) return;
+            flags.isRolling = true;
+            state.rolls++;
+            updateStats();
+
+            let result = calculateResult();
+
+            if (flags.quick) {
+                showResultInstant(result);
+            } else {
+                startTickerAnimation(result);
+            }
+        }
+
+        function calculateResult() {
+            let luck = getLuck();
+            let sorted = [...AURAS].sort((a,b) => (b.mutation?.chance || b.chance) - (a.mutation?.chance || a.chance));
+            for (let a of sorted) {
+                let chance = a.chance;
+                if (a.boost === world.time || a.boost === world.weather) chance /= 10;
+                
+                // Tính toán Mutation tỉ lệ đột biến độc lập
+                if (a.mutation && Math.random() < (luck / a.mutation.chance)) {
+                    return { ...a.mutation, isRare: true };
+                }
+                if (Math.random() < (luck / chance)) {
+                    let isMutationTrigger = a.mutation && Math.random() < 0.15; // 15% kích hoạt dạng thường đổi màu đột biến
+                    return isMutationTrigger ? { ...a.mutation, isRare: true } : { ...a, isRare: chance >= 1000 };
+                }
+            }
+            return AURAS[0];
+        }
+
+        function startTickerAnimation(result) {
+            const overlay = document.getElementById('roll-overlay');
+            const ticker = document.getElementById('roll-ticker');
+            const seq = document.getElementById('roll-sequence');
+            const finalRes = document.getElementById('final-result-display');
+            const bar = document.getElementById('roll-bar');
+
+            overlay.style.display = 'flex';
+            seq.style.display = 'flex';
+            finalRes.style.display = 'none';
+
+            let start = Date.now();
+            let potSpeed = state.activeEffects.reduce((a, b) => a + (b.speed || 0), 0);
+            let duration = 4500 / (1 + state.rollSpeed + potSpeed);
+
+            let timer = setInterval(() => {
+                let elapsed = Date.now() - start;
+                bar.style.width = (elapsed / duration * 100) + "%";
+                let rand = AURAS[Math.floor(Math.random() * 7)];
+                ticker.innerText = rand.name;
+                ticker.style.color = rand.color;
+
+                if (elapsed >= duration) {
+                    clearInterval(timer);
+                    showFinalResult(result);
+                }
+            }, 80);
+        }
+
+        function showFinalResult(result) {
+            const seq = document.getElementById('roll-sequence');
+            const finalRes = document.getElementById('final-result-display');
+            const overlay = document.getElementById('roll-overlay');
+
+            seq.style.display = 'none';
+            finalRes.style.display = 'block';
+            finalRes.innerText = result.name;
+            finalRes.style.color = result.color;
+
+            setTimeout(() => {
+                if (result.isRare) {
+                    showCutscene(result);
+                } else {
+                    overlay.style.display = 'none';
+                    processInventory(result);
+                }
+            }, 1000); 
+        }
+
+        function showResultInstant(result) {
+            const overlay = document.getElementById('roll-overlay');
+            const finalRes = document.getElementById('final-result-display');
+            
+            overlay.style.display = 'flex';
+            document.getElementById('roll-sequence').style.display = 'none';
+            document.getElementById('roll-bar').style.width = "100%";
+            finalRes.style.display = 'block';
+            finalRes.innerText = result.name;
+            finalRes.style.color = result.color;
+
+            setTimeout(() => {
+                overlay.style.display = 'none';
+                processInventory(result);
+            }, 300); 
+        }
+
+        /* --- INVENTORY INTERCEPT & AUTO-ADD INTEGRATION --- */
+        function processInventory(result) {
+            // Xóa hiệu ứng siêu thuốc 1 lần ngay lập tức sau khi tính toán roll xong
+            if(state.highTierBuff) {
+                state.highTierBuff = null;
+                updateActiveEffectsUI();
+            }
+
+            if (state.autoDelete[result.name] === true) {
+                // Tự động bỏ qua
+            } else {
+                let targetIntercepted = false;
+
+                // CƠ CHẾ TỰ ĐỘNG NẠP NGUYÊN LIỆU (AUTO ADD) KHI CÓ TOGGLE BẬT
+                if (state.autoAddToggle) {
+                    // Kiểm tra các bản găng tay trước
+                    for (let g of GEARS) {
+                        if (!state.craftProgress[g.id]) state.craftProgress[g.id] = {};
+                        let current = state.craftProgress[g.id][result.name] || 0;
+                        let target = g.req[result.name] || 0;
+                        if (target > 0 && current < target) {
+                            state.craftProgress[g.id][result.name] = current + 1;
+                            targetIntercepted = true;
+                            break;
+                        }
+                    }
+                    // Nếu găng tay không cần, kiểm tra sang bản chế tạo vật phẩm
+                    if (!targetIntercepted) {
+                        for (let itemSpec of CRAFT_ITEMS) {
+                            if (!state.craftProgress[itemSpec.id]) state.craftProgress[itemSpec.id] = {};
+                            let current = state.craftProgress[itemSpec.id][result.name] || 0;
+                            let target = itemSpec.req[result.name] || 0;
+                            if (target > 0 && current < target) {
+                                state.craftProgress[itemSpec.id][result.name] = current + 1;
+                                targetIntercepted = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (!targetIntercepted) {
+                    // Nạp vào kho đồ thông thường nếu không bị chặn hấp thụ nguyên liệu
+                    state.inventory.push({
+                        id: Math.random() + Date.now(),
+                        name: result.name,
+                        rolledAt: Date.now()
+                    });
+                    let chanceVal = findAuraData(result.name).chance;
+                    if (chanceVal > state.best) state.best = chanceVal;
+                }
+            }
+
+            setTimeout(() => {
+                flags.isRolling = false;
+                updateStats();
+                if (flags.auto) handleRoll();
+            }, 100);
+        }
+
+        /* --- INTERFACE RENDER ENGINE --- */
+        function updateStats() {
+            document.getElementById('st-rolls').innerText = state.rolls.toLocaleString();
+            document.getElementById('st-luck').innerText = getLuck().toFixed(1);
+            document.getElementById('st-best').innerText = state.best > 0 ? "1/" + state.best.toLocaleString() : "None";
+        }
+
+        function openModal(id) {
+            document.getElementById(id).style.display = 'block';
+            if (id === 'modal-inv') renderInv('auras');
+            if (id === 'modal-settings') renderSettings();
+            if (id === 'modal-ws') renderWorkshop();
+            if (id === 'modal-alchemy') renderAlchemy();
+        }
+
+        function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+        function toggleAutoAddState() {
+            state.autoAddToggle = !state.autoAddToggle;
+            let btn = document.getElementById('btn-toggle-autoadd');
+            btn.innerText = `AUTO ADD MATERIAL: ${state.autoAddToggle ? 'ON' : 'OFF'}`;
+            btn.classList.toggle('active-btn', state.autoAddToggle);
+        }
+
+        function setSort(type) {
+            state.sortType = type;
+            ['order', 'rarity', 'alphabet'].forEach(t => {
+                document.getElementById(`btn-sort-${t}`).classList.toggle('active-btn', t === type);
+            });
+            renderInv('auras');
+        }
+
+        function renderInv(tab) {
+            const grid = document.getElementById('inv-grid');
+            grid.innerHTML = '';
+            
+            if (tab === 'auras') {
+                document.getElementById('sort-controls').style.display = 'flex';
+                let displayList = [...state.inventory];
+                
+                if (state.sortType === 'rarity') {
+                    displayList.sort((a, b) => findAuraData(b.name).chance - findAuraData(a.name).chance);
+                } else if (state.sortType === 'alphabet') {
+                    displayList.sort((a, b) => a.name.localeCompare(b.name));
+                } else {
+                    displayList.sort((a, b) => a.rolledAt - b.rolledAt);
+                }
+
+                displayList.forEach((item) => {
+                    let aura = findAuraData(item.name);
+                    let div = document.createElement('div');
+                    div.className = 'card';
+                    div.innerHTML = `
+                        <div style="color:${aura.color}; font-weight:bold">${aura.name}</div>
+                        <div style="font-size:0.7rem">1/${aura.chance.toLocaleString()}</div>
+                        <div style="margin-top:10px; display:flex; gap:5px; justify-content:center;">
+                            <button style="font-size:0.6rem; background:#3498db; padding: 4px 8px;" onclick="equipAura('${item.name}')">EQUIP</button>
+                            <button style="font-size:0.6rem; background:#c0392b; padding: 4px 8px;" onclick="deleteItem(${item.id})">X</button>
+                        </div>
+                    `;
+                    grid.appendChild(div);
+                });
+            } else {
+                document.getElementById('sort-controls').style.display = 'none';
+                for (let n in state.items) {
+                    if (state.items[n] > 0) {
+                        let div = document.createElement('div');
+                        div.className = 'card';
+                        div.innerHTML = `<b>${n}</b><br>x${state.items[n]}<br><button onclick="usePotion('${n}')" style="margin-top:8px; background:#2ed573; padding:5px 15px; font-size:0.75rem;">USE</button>`;
+                        grid.appendChild(div);
+                    }
+                }
+            }
+        }
+
+        /* --- TABS SYSTEM WORKSHOP & ITEMS --- */
+        function switchWsTab(tab) {
+            state.currentWsTab = tab;
+            document.getElementById('tab-gears').classList.toggle('active', tab === 'gears');
+            document.getElementById('tab-items').classList.toggle('active', tab === 'items');
+            renderWorkshop();
+        }
+
+        function renderWorkshop() {
+            const container = document.getElementById('ws-content-grid');
+            container.innerHTML = '';
+
+            if (state.currentWsTab === 'gears') {
+                GEARS.forEach(g => {
+                    let progress = state.craftProgress[g.id] || {};
+                    let card = document.createElement('div');
+                    card.className = 'card';
+                    card.style.textAlign = 'left';
+                    let reqs = '';
+                    for (let aName in g.req) {
+                        let owned = state.inventory.filter(item => item.name === aName).length + (progress[aName] || 0);
+                        let target = g.req[aName];
+                        reqs += `<div style="display:flex; justify-content:space-between; margin:4px 0; font-size:0.8rem; color:${owned>=target?'#2ed573':'#888'}">
+                            • ${aName}: ${progress[aName] || 0}/${target} (Kho: ${state.inventory.filter(item => item.name === aName).length})
+                            <button onclick="addMaterialToRecipe('${g.id}','${aName}', true)" style="padding:2px 8px; font-size:0.65rem">ADD</button>
+                        </div>`;
+                    }
+                    card.innerHTML = `
+                        <h3 style="margin:0; color:var(--text-gold); font-size:1.15rem;">${g.name}</h3>
+                        <div style="font-size:0.75rem; color:#aaa">+${g.luck} Luck | +${(g.speed*100).toFixed(0)}% Speed</div>
+                        <div style="margin:8px 0">${reqs}</div>
+                        <button style="width:100%; background:#3498db; padding:6px; font-size:0.8rem;" onclick="finishCraftGear('${g.id}')">CRAFT GEAR</button>
+                    `;
+                    container.appendChild(card);
+                });
+            } else {
+                // RENDER CRAFTING CHO VẬT PHẨM (MAGNET, BIOME RANDOMIZER)
+                CRAFT_ITEMS.forEach(itemSpec => {
+                    let progress = state.craftProgress[itemSpec.id] || {};
+                    let card = document.createElement('div');
+                    card.className = 'card';
+                    card.style.textAlign = 'left';
+                    let reqs = '';
+                    for (let aName in itemSpec.req) {
+                        let owned = state.inventory.filter(item => item.name === aName).length + (progress[aName] || 0);
+                        let target = itemSpec.req[aName];
+                        reqs += `<div style="display:flex; justify-content:space-between; margin:4px 0; font-size:0.8rem; color:${owned>=target?'#2ed573':'#888'}">
+                            • ${aName}: ${progress[aName] || 0}/${target} (Kho: ${state.inventory.filter(item => item.name === aName).length})
+                            <button onclick="addMaterialToRecipe('${itemSpec.id}','${aName}', false)" style="padding:2px 8px; font-size:0.65rem">ADD</button>
+                        </div>`;
+                    }
+                    card.innerHTML = `
+                        <h3 style="margin:0; color:#00ecff; font-size:1.15rem;">${itemSpec.name}</h3>
+                        <div style="font-size:0.75rem; color:#aaa; margin:4px 0;">${itemSpec.desc}</div>
+                        <div style="margin:8px 0">${reqs}</div>
+                        <button style="width:100%; background:#00ecff; color:black; padding:6px; font-size:0.8rem;" onclick="finishCraftItem('${itemSpec.id}')">CRAFT ITEM</button>
+                    `;
+                    container.appendChild(card);
+                });
+            }
+        }
+
+        function addMaterialToRecipe(recipeId, auraName, isGear) {
+            let idx = state.inventory.findIndex(item => item.name === auraName);
+            if (idx === -1) return alert("Bạn không có Aura này trong Kho để nạp!");
+            
+            if (!state.craftProgress[recipeId]) state.craftProgress[recipeId] = {};
+            let targetStructure = isGear ? GEARS.find(g => g.id === recipeId) : CRAFT_ITEMS.find(i => i.id === recipeId);
+            let current = state.craftProgress[recipeId][auraName] || 0;
+            
+            if (current < targetStructure.req[auraName]) {
+                state.inventory.splice(idx, 1);
+                state.craftProgress[recipeId][auraName] = current + 1;
+                renderWorkshop();
+            } else {
+                alert("Nguyên liệu loại này trong bản vẽ đã đầy!");
+            }
+        }
+
+        function finishCraftGear(id) {
+            let gear = GEARS.find(g => g.id === id);
+            let prog = state.craftProgress[id] || {};
+            for(let n in gear.req) {
+                if((prog[n] || 0) < gear.req[n]) return alert("Chưa đủ nguyên liệu trên thiết kế!");
+            }
+            state.baseLuck += gear.luck;
+            state.rollSpeed += gear.speed;
+            delete state.craftProgress[id];
+            alert(`Chế tạo thành công găng thần: ${gear.name}!`);
+            renderWorkshop();
+            updateStats();
+        }
+
+        function finishCraftItem(id) {
+            let itemSpec = CRAFT_ITEMS.find(i => i.id === id);
+            let prog = state.craftProgress[id] || {};
+            for(let n in itemSpec.req) {
+                if((prog[n] || 0) < itemSpec.req[n]) return alert("Chưa đủ nguyên liệu trên thiết kế!");
+            }
+            state.items[itemSpec.name] = (state.items[itemSpec.name] || 0) + 1;
+            delete state.craftProgress[id];
+            alert(`Chế tạo thành công vật phẩm đặc biệt: ${itemSpec.name}!`);
+            renderWorkshop();
+        }
+
+        /* --- HIGH TIER POTION BUFF REWORK & ITEM ACTIONS --- */
+        function usePotion(name) {
+            // HÀNH VI ĐẶC BIỆT CỦA CÁC VẬT PHẨM CHẾ TẠO (MAGNET / BIOME RANDOMIZER)
+            if (name === "Magnet") {
+                state.items["Magnet"]--;
+                let entities = document.querySelectorAll('.potion-entity');
+                entities.forEach(pot => pot.click());
+                alert("🧲 Từ trường Magnet giải phóng! Đã gom sạch bình thuốc trên map!");
+                renderInv('items');
+                return;
+            }
+            if (name === "Biome Randomizer") {
+                state.items["Biome Randomizer"]--;
+                triggerRandomBiome();
+                alert("🌀 Biome Randomizer kích hoạt! Dòng thời gian và thời tiết đã bị bẻ cong!");
+                renderInv('items');
+                return;
+            }
+
+            // HÀNH VI CỦA THUỐC BUFF THÔNG THƯỜNG HOẶC SIÊU THUỐC
+            if (state.items[name] > 0) {
+                state.items[name]--;
+                let pData = POTIONS[name];
+
+                if (pData.type === "instant") {
+                    // CƠ CHẾ REWORK: Ghi đè biến và không cộng dồn chéo giữa Ultra và Sovereign
+                    state.highTierBuff = { name: name, luck: pData.luck };
+                    alert(`⚡ Đã nuốt ${name}! Lượt ROLL kế tiếp sẽ được cộng thêm +${pData.luck.toLocaleString()} Luck! (Không cộng dồn với siêu thuốc khác)`);
+                } else {
+                    // Cơ chế thuốc thời gian cũ (Fortune / Speed) cộng dồn bình thường
+                    let activeEff = { ...pData, name: name, expireAt: Date.now() + (pData.duration * 1000) };
+                    state.activeEffects.push(activeEff);
+                    
+                    setTimeout(() => {
+                        state.activeEffects = state.activeEffects.filter(e => e !== activeEff);
+                        updateActiveEffectsUI();
+                        updateStats();
+                    }, pData.duration * 1000);
+                }
+
+                updateActiveEffectsUI();
+                renderInv('items');
+                updateStats();
+            }
+        }
+
+        function updateActiveEffectsUI() {
+            const container = document.getElementById('active-potions');
+            container.innerHTML = '';
+
+            // Render siêu thuốc 1 lần trước
+            if (state.highTierBuff) {
+                let div = document.createElement('div');
+                div.style.color = POTIONS[state.highTierBuff.name].color;
+                div.style.fontSize = "0.8rem";
+                div.style.fontWeight = "bold";
+                div.innerText = `🔥 ${state.highTierBuff.name} (1 LƯỢT ROLL)`;
+                container.appendChild(div);
+            }
+
+            // Render thuốc thời gian
+            state.activeEffects.forEach(eff => {
+                let div = document.createElement('div');
+                div.style.color = eff.color;
+                div.style.fontSize = "0.8rem";
+                div.innerText = `🧪 ${eff.name}`;
+                container.appendChild(div);
+            });
+        }
+
+        function triggerRandomBiome() {
+            const times = ["Day", "Night"];
+            const weathers = ["Clear", "Rainy", "Windy"];
+            world.time = times[Math.floor(Math.random() * times.length)];
+            world.weather = weathers[Math.floor(Math.random() * weathers.length)];
+            
+            document.getElementById('wt-time').innerText = world.time.toUpperCase();
+            document.getElementById('wt-cond').innerText = world.weather.toUpperCase();
+            updateWorldBg();
+        }
+
+        function updateWorldBg() {
+            if (world.time === "Day") {
+                document.body.style.background = world.weather === "Rainy" ? "#1e272e" : (world.weather === "Windy" ? "#2f3542" : "#000");
+            } else {
+                document.body.style.background = world.weather === "Rainy" ? "#0f172a" : (world.weather === "Windy" ? "#1e1b4b" : "#020205");
+            }
+        }
+
+        /* --- VISUAL LOOK SYSTEM UPDATE --- */
+        function equipAura(name) {
+            state.equippedAura = name;
+            const vis = document.getElementById('aura-visual');
+            vis.className = ''; vis.style = '';
+            
+            let data = findAuraData(name);
+            vis.style.position = 'absolute'; vis.style.width = '180px'; vis.style.height = '180px';
+            vis.style.borderRadius = '50%'; vis.style.pointerEvents = 'none'; vis.style.zIndex = '90';
+
+            if (name === "Magnetic") { // NGOẠI HÌNH VÒNG TỪ TRƯỜNG CYAN CHỚP NHÁY
+                vis.style.boxShadow = `inset 0 0 5px #fff, 0 0 30px #00ecff, 0 0 80px #00ecff`;
+                vis.style.border = "4px double #00ecff";
+                vis.style.animation = "magnetic-pulse 1s infinite linear";
+            } else if (name === "Divinus: Angel") { // NGOẠI HÌNH ĐỘT BIẾN THIÊN THẦN
+                vis.style.boxShadow = `inset 0 0 60px #ffffff, 0 0 140px #fffeb3`;
+                vis.style.background = `radial-gradient(circle, rgba(255,255,255,0.4) 0%, transparent 60%)`;
+                vis.style.border = "3px dashed #fffeb3";
+                vis.style.animation = "aura-vortex 2.5s infinite linear";
+            } else if (name === "Solar: Flare") { // NGOẠI HÌNH ĐỘT BIẾN BÃO MẶT TRỜI
+                vis.style.boxShadow = `inset 0 0 80px #ff3c00, 0 0 250px #ff3c00`;
+                vis.style.background = `radial-gradient(circle, rgba(255,60,0,0.4) 0%, transparent 50%)`;
+                vis.style.animation = "aura-rotate 0.8s infinite linear";
+            } else if (name === "Velocity") {
+                vis.style.boxShadow = `inset 0 0 50px #00ff88, 0 0 180px #00ff88`;
+                vis.style.animation = "aura-pulse-fast 0.25s infinite alternate";
+            } else if (name === "Sovereign") {
+                vis.style.boxShadow = `inset 0 0 130px #9b59b6, 0 0 400px #2c3e50`;
+                vis.style.animation = "aura-vortex 1.2s infinite linear";
+                vis.style.border = "5px dotted #9b59b6";
+            } else {
+                vis.style.boxShadow = `inset 0 0 40px ${data.color}, 0 0 80px ${data.color}`;
+                vis.style.animation = "aura-rotate 4s infinite linear";
+            }
+            closeModal('modal-inv');
+        }
+
+        /* --- ALCHEMY BREWING ENGINE --- */
+        function renderAlchemy() {
+            const grid = document.getElementById('alc-grid');
+            grid.innerHTML = '';
+            ALCHEMY_RECIPES.forEach(r => {
+                let card = document.createElement('div');
+                card.className = 'card';
+                card.style.textAlign = 'left';
+                let reqsHTML = '<div style="font-size:0.8rem; margin-top:5px; font-weight:bold; color:#ffeaa7;">Nguyên liệu yêu cầu:</div>';
+                let canBrew = true;
+
+                for (let pName in r.reqItems) {
+                    let owned = state.items[pName] || 0;
+                    let target = r.reqItems[pName];
+                    if (owned < target) canBrew = false;
+                    reqsHTML += `<div style="font-size:0.75rem; color:${owned >= target ? '#2ed573' : '#ff4757'}">🧪 Thuốc ${pName}: ${owned}/${target}</div>`;
+                }
+                for (let aName in r.reqAuras) {
+                    let owned = state.inventory.filter(item => item.name === aName).length;
+                    let target = r.reqAuras[aName];
+                    if (owned < target) canBrew = false;
+                    reqsHTML += `<div style="font-size:0.75rem; color:${owned >= target ? '#2ed573' : '#ff4757'}">✨ Aura ${aName}: ${owned}/${target}</div>`;
+                }
+
+                card.innerHTML = `
+                    <h3 style="margin:0; color:${POTIONS[r.result].color}; font-size:1.1rem;">${r.name}</h3>
+                    <div style="font-size:0.75rem; color:#aaa">Nhận 1x bình ${r.result}</div>
+                    <div style="margin:6px 0">${reqsHTML}</div>
+                    <button style="width:100%; background:${canBrew ? '#9b59b6' : '#444'}; color:white;" ${canBrew ? '' : 'disabled'} onclick="brewPotion('${r.id}')">BREW</button>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function brewPotion(recipeId) {
+            let recipe = ALCHEMY_RECIPES.find(r => r.id === recipeId);
+            for (let pName in recipe.reqItems) { if ((state.items[pName] || 0) < recipe.reqItems[pName]) return; }
+            for (let aName in recipe.reqAuras) { if (state.inventory.filter(item => item.name === aName).length < recipe.reqAuras[aName]) return; }
+
+            for (let pName in recipe.reqItems) { state.items[pName] -= recipe.reqItems[pName]; }
+            for (let aName in recipe.reqAuras) {
+                let count = recipe.reqAuras[aName];
+                for (let i = 0; i < count; i++) {
+                    let idx = state.inventory.findIndex(item => item.name === aName);
+                    if (idx !== -1) state.inventory.splice(idx, 1);
+                }
+            }
+
+            state.items[recipe.result] = (state.items[recipe.result] || 0) + 1;
+            alert(`[Alchemy] Ngưng tụ thành công tinh chất: ${recipe.result}!`);
+            renderAlchemy();
+            updateStats();
+        }
+
+        /* --- BASIC UTILS & SPAWNERS --- */
+        function findAuraData(name) {
+            for(let a of AURAS) {
+                if(a.name === name) return a;
+                if(a.mutation && a.mutation.name === name) return a.mutation;
+            }
+            return AURAS[0];
+        }
+
+        function deleteItem(uniqueId) { state.inventory = state.inventory.filter(item => item.id !== uniqueId); renderInv('auras'); }
+        function toggleAuto() { flags.auto = !flags.auto; document.getElementById('btn-auto').classList.toggle('active-btn'); if(flags.auto) handleRoll(); }
+        function toggleQuick() { flags.quick = !flags.quick; document.getElementById('btn-quick').classList.toggle('active-btn'); }
+
+        function spawnPotion() {
+            let pNames = ["Lucky Potion", "Speed Potion"];
+            let pName = pNames[Math.floor(Math.random() * pNames.length)];
+            let div = document.createElement('div');
+            div.className = 'potion-entity';
+            div.style.color = POTIONS[pName].color;
+            div.style.background = `radial-gradient(circle, ${POTIONS[pName].color} 0%, transparent 70%)`;
+            div.style.left = (Math.random() * 4000 + 500) + 'px';
+            div.style.top = (Math.random() * 4000 + 500) + 'px';
+            div.onclick = () => { state.items[pName] = (state.items[pName]||0)+1; div.remove(); };
+            document.getElementById('game-container').appendChild(div);
+        }
+
+        function renderSettings() {
+            const list = document.getElementById('settings-list');
+            list.innerHTML = '';
+            AURAS.forEach(a => {
+                createSettingRow(a.name, a.color, list);
+                if(a.mutation) createSettingRow(a.mutation.name, a.mutation.color, list);
+            });
+        }
+
+        function createSettingRow(name, color, parent) {
+            let row = document.createElement('div'); row.className = 'settings-row';
+            let isDeleting = state.autoDelete[name];
+            row.innerHTML = `<span style="color:${color}; font-weight:bold;">${name}</span>
+                <button class="${isDeleting ? 'toggle-delete' : 'toggle-keep'}" onclick="toggleDeletePref('${name}')">${isDeleting ? 'AUTO DELETE' : 'KEEP'}</button>`;
+            parent.appendChild(row);
+        }
+
+        function toggleDeletePref(name) { state.autoDelete[name] = !state.autoDelete[name]; renderSettings(); }
+        function showCutscene(aura) {
+            const cs = document.getElementById('cutscene');
+            document.getElementById('cs-chance').innerText = "1 / " + aura.chance.toLocaleString();
+            document.getElementById('cs-name').innerText = aura.name.toUpperCase();
+            document.getElementById('cs-name').style.color = aura.color;
+            cs.style.display = 'flex';
+        }
+
+        function closeCutscene() {
+            document.getElementById('cutscene').style.display = 'none';
+            document.getElementById('roll-overlay').style.display = 'none';
+            let lastAuraName = document.getElementById('final-result-display').innerText;
+            processInventory(findAuraData(lastAuraName));
+        }
+
+        window.addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; });
+        window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+        setInterval(() => {
+            if(!flags.isRolling && !flags.auto) triggerRandomBiome();
+            if(Math.random() > 0.3) spawnPotion();
+        }, 15000);
+
+        moveLoop();
+        updateStats();
+    </script>
+</body>
+</html>

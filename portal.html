@@ -1,0 +1,1440 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>The Mysterious Portal - LocalStorage Edition</title>
+  <style>
+    :root {
+      --bg: #0f291e;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --accent: #8b5cf6;
+      --text: #f8fafc;
+      --subtext: #94a3b8;
+      --common: #a1a1aa;
+      --rare: #3b82f6;
+      --epic: #a855f7;
+      --legendary: #f59e0b;
+      --mythic: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); transition: background-color 0.5s ease; color: var(--text); padding: 16px; display: flex; justify-content: center; }
+    .game-container { width: 100%; max-width: 1100px; display: grid; grid-template-columns: 330px 1fr; gap: 16px; }
+    @media (max-width: 768px) { .game-container { grid-template-columns: 1fr; } }
+    
+    .panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 16px; }
+    h2, h3 { margin-bottom: 12px; color: var(--accent); display: flex; align-items: center; gap: 8px; }
+    
+    .stat-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; }
+    .btn-add { background: var(--accent); color: white; border: none; width: 22px; height: 22px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+    .btn-add:disabled { opacity: 0.3; cursor: not-allowed; }
+    
+    .portals-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 16px; margin-bottom: 16px; }
+    .portal-card { background: #2d3748; border: 2px dashed var(--accent); border-radius: 10px; height: 140px; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: all 0.2s; }
+    .portal-card:hover { background: #3b0764; border-style: solid; transform: translateY(-3px); box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3); }
+    
+    .action-btn { background: #3b82f6; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: bold; margin-right: 6px; margin-bottom: 6px; font-size: 13px; display: inline-flex; align-items: center; gap: 6px; }
+    .action-btn:hover { opacity: 0.9; }
+    .action-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .action-btn.danger { background: #ef4444; }
+    .action-btn.success { background: #10b981; }
+    .action-btn.jester { background: #a855f7; }
+    .action-btn.vampire { background: #991b1b; }
+    .action-btn.warning { background: #f59e0b; }
+    .action-btn.skill { background: #ec4899; }
+    .action-btn.secondary { background: #475569; }
+    
+    .log-box { background: #090d16; border: 1px solid var(--border); border-radius: 8px; height: 280px; padding: 12px; overflow-y: auto; font-size: 13px; line-height: 1.6; color: #cbd5e1; }
+    .log-entry { margin-bottom: 6px; border-bottom: 1px dashed #1e293b; padding-bottom: 4px; }
+    
+    .inventory-list { display: flex; flex-direction: column; gap: 8px; max-height: 200px; overflow-y: auto; }
+    .item-card { background: #0f172a; border: 1px solid var(--border); padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 13px; }
+    
+    .tag { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; }
+    .tag-Phổ-thông { color: var(--common); border: 1px solid var(--common); }
+    .tag-Hiếm { color: var(--rare); border: 1px solid var(--rare); }
+    .tag-Sử-thi { color: var(--epic); border: 1px solid var(--epic); }
+    .tag-Huyền-thoại { color: var(--legendary); border: 1px solid var(--legendary); }
+    .tag-Thần-thoại { color: var(--mythic); border: 1px solid var(--mythic); }
+
+    .badge-sub { font-size: 11px; color: var(--subtext); background: #0f172a; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 8px; }
+    .skill-badge { background: #831843; border: 1px solid #ec4899; color: #fbcfe8; font-size: 11px; padding: 4px 8px; border-radius: 4px; margin-bottom: 4px; display: block; }
+    .biome-badge { background: #1e1b4b; border: 1px solid #6366f1; color: #c7d2fe; font-size: 13px; font-weight: bold; padding: 6px 12px; border-radius: 8px; text-align: center; margin-bottom: 12px; }
+
+    .monster-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin-bottom: 12px; }
+    .monster-card { background: #090d16; padding: 10px; border: 2px solid var(--border); border-radius: 8px; cursor: pointer; transition: all 0.2s; position: relative; }
+    .monster-card.selected { border-color: #ef4444; background: #2c0b0e; }
+    .target-badge { position: absolute; top: -8px; right: -8px; background: #ef4444; color: white; border-radius: 50%; padding: 2px 6px; font-size: 10px; font-weight: bold; }
+    .shop-box { background: #090d16; padding: 10px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 12px; }
+    
+    .wiki-floating-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: linear-gradient(135deg, #f59e0b, #d97706);
+      color: #ffffff;
+      padding: 10px 18px;
+      border-radius: 25px;
+      font-weight: bold;
+      font-family: sans-serif;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+      z-index: 9999;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .wiki-floating-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(245, 158, 11, 0.5);
+    }
+
+    .save-control-bar {
+      display: flex;
+      gap: 6px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px dashed var(--border);
+    }
+  </style>
+</head>
+<body>
+
+<div class="game-container">
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div class="panel">
+      <div id="biomeBanner" class="biome-badge">🍃 Đồng Bằng</div>
+      <h2>👤 Nhân Vật (⭐Lv.<span id="level">1</span>)</h2>
+      <p style="font-size:12px; color:var(--subtext); margin-bottom:8px;">✨ EXP: <span id="exp">0</span>/<span id="maxExp">100</span> | 🌀 Cổng: <span id="portalCount">0</span></p>
+      <p style="font-size:12px; color:var(--legendary); margin-bottom:12px;">📈 Điểm tiềm năng: <span id="statPoints">0</span></p>
+      <a href="wiki.html" target="_blank" class="wiki-floating-btn">📖 Wiki Game</a>
+
+      <div class="stat-row"><span>🪙 Vàng:</span> <b style="color:#facc15" id="gold">50</b></div>
+      <div class="stat-row"><span>💖 Máu (HP):</span> <span><b id="hp">100</b>/<span id="maxHp">100</span></span> <button class="btn-add" onclick="addStat('hp')">+</button></div>
+      <div class="stat-row"><span>⚔️ Sát thương (DMG):</span> <b id="dmg">10</b> <button class="btn-add" onclick="addStat('dmg')">+</button></div>
+      <div class="stat-row"><span>💧 Năng lượng (Mana):</span> <span><b id="mana">100</b>/<span id="maxMana">100</span> <small style="color:#10b981">(+3/s)</small></span> <button class="btn-add" onclick="addStat('mana')">+</button></div>
+      <div class="stat-row"><span>👟 Tốc độ (SPD):</span> <b id="spd">5</b> <button class="btn-add" onclick="addStat('spd')">+</button></div>
+      <div class="stat-row"><span>🛡️ Phòng thủ (DEF):</span> <b id="def">2</b> <button class="btn-add" onclick="addStat('def')">+</button></div>
+      <div class="stat-row"><span>🍀 May mắn (Luck):</span> <b id="luck">1</b> <button class="btn-add" onclick="addStat('luck')">+</button></div>
+
+      <div style="margin-top:12px; border-top:1px solid var(--border); padding-top:8px;">
+        <div class="badge-sub">⚡ Trạng Thái & Chỉ Số Phụ:</div>
+        <div id="statusBadge" style="margin-bottom:6px; font-size:12px; font-weight:bold;"></div>
+        <div class="stat-row"><span>🎯 Chí mạng:</span> <b id="critRate" style="color:#f59e0b">0%</b></div>
+        <div class="stat-row"><span>⚡ Liên kích:</span> <b id="comboRate" style="color:#3b82f6">0%</b></div>
+        <div class="stat-row"><span>💫 Choáng:</span> <b id="stunRate" style="color:#a855f7">0%</b></div>
+        <div class="stat-row"><span>🌀 Né đòn:</span> <b id="dodgeRate" style="color:#10b981">0%</b></div>
+      </div>
+
+      <!-- Nút Điều Khiển Save Data -->
+      <div class="save-control-bar">
+        <button class="action-btn success" style="flex:1; margin:0;" onclick="manualSave()">💾 Lưu Game</button>
+        <button class="action-btn danger" style="flex:1; margin:0;" onclick="resetSaveData()">🗑️ Xóa Save</button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h3>🎒 Trang Bị & Thẻ Bài</h3>
+      <div class="stat-row"><span>🗡️ Vũ khí:</span> <span id="equippedWeapon" style="color:var(--subtext)">Tay không</span></div>
+      <div class="stat-row"><span>🛡️ Áo giáp:</span> <span id="equippedArmor" style="color:var(--subtext)">Vải thô</span></div>
+      <div class="stat-row"><span>🃏 Thẻ Tarot:</span> <span id="equippedTarot" style="color:var(--subtext)">Chưa có</span></div>
+      
+      <h3 style="margin-top:10px; font-size:14px; color:#ec4899;">💥 Kỹ Năng Đã Học:</h3>
+      <div id="skillsList"></div>
+
+      <h3 style="margin-top:12px;">📦 Hành Trang</h3>
+      <div id="inventoryList" class="inventory-list"></div>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 16px;">
+    <div class="panel" style="min-height: 240px;">
+      <h2 id="eventTitle">🌀 Cánh Cổng Bí Ẩn</h2>
+      <div id="eventDescription" style="color: var(--subtext);">Lựa chọn 1 trong 3 cánh cổng phía dưới để tiếp tục dấn thân.</div>
+
+      <div id="portalSection">
+        <div class="portals-grid">
+          <div class="portal-card" onclick="openPortal(1)">
+            <span style="font-size:36px;">🚪</span>
+            <span>Cổng #1</span>
+          </div>
+          <div class="portal-card" onclick="openPortal(2)">
+            <span style="font-size:36px;">🚪</span>
+            <span>Cổng #2</span>
+          </div>
+          <div class="portal-card" onclick="openPortal(3)">
+            <span style="font-size:36px;">🚪</span>
+            <span>Cổng #3</span>
+          </div>
+        </div>
+      </div>
+
+      <div id="interactionSection" style="display:none; margin-top:12px;"></div>
+    </div>
+
+    <div class="panel" style="flex:1;">
+      <h3>📜 Nhật Ký Hành Trình</h3>
+      <div id="gameLog" class="log-box"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const SAVE_KEY = 'mysterious_portal_save_v1';
+
+  const RARITIES = [
+    { name: 'Phổ thông', color: 'Phổ-thông', mult: 1 },
+    { name: 'Hiếm', color: 'Hiếm', mult: 1.5 },
+    { name: 'Sử thi', color: 'Sử-thi', mult: 2.2 },
+    { name: 'Huyền thoại', color: 'Huyền-thoại', mult: 3.5 },
+    { name: 'Thần thoại', color: 'Thần-thoại', mult: 5 }
+  ];
+
+  const ALL_SKILLS = [
+    { id: 'strike', name: 'Dũng Sĩ Trảm', cost: 12, dmgMult: 2.0, stunChance: 10, desc: 'Gây 200% DMG, 10% Choáng' },
+    { id: 'fireball', name: 'Hỏa Cầu Cổ Đại', cost: 20, dmgMult: 2.8, stunChance: 0, desc: 'Gây 280% DMG cực mạnh' },
+    { id: 'lightning', name: 'Lôi Trảm Choáng', cost: 25, dmgMult: 1.8, stunChance: 80, desc: 'Gây 180% DMG, 80% Choáng' },
+    { id: 'ultimate', name: 'Thần Kiếm Nhất Xung', cost: 35, dmgMult: 3.5, stunChance: 30, desc: 'Gây 350% DMG' }
+  ];
+
+  const TAROT_CARDS = [
+    { id: 'sun', name: 'The Sun', rarity: 'Sử thi', color: 'Sử-thi', weight: 15, desc: 'Tăng 10 điểm mọi chỉ số cơ bản' },
+    { id: 'wheel', name: 'Wheel Of Fortune', rarity: 'Phổ thông', color: 'Phổ-thông', weight: 35, desc: 'Tăng 30 chỉ số May Mắn (Luck)' },
+    { id: 'strength', name: 'Strength', rarity: 'Phổ thông', color: 'Phổ-thông', weight: 35, desc: 'Tăng 30 chỉ số Sát thương (DMG)' },
+    { id: 'emperor', name: 'The Emperor', rarity: 'Hiếm', color: 'Hiếm', weight: 25, desc: 'Tăng 10 DMG, 10 DEF và +50% Vàng nhận được' },
+    { id: 'justice', name: 'Justice', rarity: 'Hiếm', color: 'Hiếm', weight: 25, desc: 'Tăng 10 DMG, +10% Chí mạng & Sát thương Chí mạng x3' },
+    { id: 'fool', name: 'The Fool', rarity: 'Sử thi', color: 'Sử-thi', weight: 15, desc: 'Giảm 5 điểm mọi chỉ số. Mỗi cửa tăng +1 chỉ số (tối đa +30)' },
+    { id: 'devil', name: 'The Devil', rarity: 'Sử thi', color: 'Sử-thi', weight: 15, desc: '-50% Máu tối đa, +50% Sát thương' },
+    { id: 'judgement', name: 'Judgement', rarity: 'Huyền thoại', color: 'Huyền-thoại', weight: 8, desc: 'Tăng 20 tất cả chỉ số. Tiêu diệt 1 quái giảm 1 chỉ số' },
+    { id: 'death', name: 'Death', rarity: 'Thần thoại', color: 'Thần-thoại', weight: 4, desc: 'Máu về 1. Sống sót qua cửa sau nhận 1 Mạng & hồi 50% Máu' },
+    { id: 'hanged', name: 'The Hanged Man', rarity: 'Phổ thông', color: 'Phổ-thông', weight: 30, desc: 'Mất 5% HP hiện tại/cửa. Khi HP < 50%, nhận +30 DMG & DEF' }
+  ];
+
+  let p = {
+    level: 1, exp: 0, maxExp: 100, statPoints: 0, portalCount: 0, gold: 50,
+    baseHp: 100, hp: 100, maxHp: 100,
+    baseDmg: 10, dmg: 10,
+    baseMana: 100, mana: 100, maxMana: 100,
+    baseSpd: 5, spd: 5,
+    baseDef: 2, def: 2,
+    baseLuck: 1, luck: 1,
+    inventory: [], weapon: null, armor: null,
+    skills: [ ALL_SKILLS[0] ],
+    
+    desertCleared: false,
+    bleedingStatus: 0,
+
+    tarotCard: null,
+    foolCount: 0,
+    judgementKills: 0,
+    deathPending: false,
+    hasExtraLife: false
+  };
+
+  let monsters = [];
+  let targetMonsterIdx = 0;
+  let isBoss = false;
+  let playerStunned = false;
+  let playerSilencedTurns = 0;
+  let enemyFaster = false;
+
+  let jesterGambled = false;
+  let vampireGambled = false;
+  let jesterItems = [];
+  let currentTarotChoices = [];
+
+  // --- HỆ THỐNG LOCAL STORAGE ---
+  function saveGame() {
+    try {
+      localStorage.setItem(SAVE_KEY, JSON.stringify(p));
+    } catch (e) {
+      console.error("Không thể lưu game vào LocalStorage", e);
+    }
+  }
+
+  function loadGame() {
+    const savedData = localStorage.getItem(SAVE_KEY);
+    if (!savedData) return false;
+    try {
+      const parsed = JSON.parse(savedData);
+      p = { ...p, ...parsed };
+      return true;
+    } catch (e) {
+      console.error("Lỗi khi tải dữ liệu đã lưu", e);
+      return false;
+    }
+  }
+
+  function manualSave() {
+    saveGame();
+    log('<b style="color:#10b981">💾 Đã lưu tiến trình game thành công!</b>');
+  }
+
+  function resetSaveData() {
+    if (confirm("⚠️ Bạn có chắc muốn XÓA DỮ LIỆU đã lưu và chơi lại từ đầu?")) {
+      localStorage.removeItem(SAVE_KEY);
+      location.reload();
+    }
+  }
+
+  function getBiome() {
+    const cycle = Math.floor(Math.max(0, p.portalCount - 1) / 10) % 3;
+    if (cycle === 0) return { id: 'plain', name: '🍃 Đồng Bằng', desc: 'Sự cân bằng nguyên bản. Giảm chỉ số phụ của Boss.', bg: '#0f291e' };
+    if (cycle === 1) return { id: 'desert', name: '🏜️ Sa Mạc Khắc Nghiệt', desc: 'Debuff: Tăng 25% Mana dùng chiêu. Buff: +10% Vàng nhận được.', bg: '#381a08' };
+    return { id: 'atlantis', name: '🌊 Atlantis Đại Dương', desc: 'Debuff: Giảm 50% Max Mana. Buff: Nhận ít hơn 5-15% sát thương.', bg: '#082538' };
+  }
+
+  setInterval(() => {
+    if (p.hp > 0 && p.mana < p.maxMana) {
+      p.mana = Math.min(p.maxMana, p.mana + 3);
+      updateUI(false); // Không lưu liên tục mỗi giây để tránh quá tải Storage
+    }
+  }, 1000);
+
+  function log(msg) {
+    const box = document.getElementById('gameLog');
+    box.innerHTML += `<div class="log-entry">${msg}</div>`;
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function getTarotStats() {
+    let t = { hp: 0, dmg: 0, mana: 0, spd: 0, def: 0, luck: 0, crit: 0, combo: 0, stun: 0, dodge: 0, maxHpMult: 1.0, dmgMult: 1.0 };
+    if (!p.tarotCard) return t;
+
+    const tid = p.tarotCard.id;
+    if (tid === 'sun') {
+      t.hp += 10; t.dmg += 10; t.mana += 10; t.spd += 10; t.def += 10; t.luck += 10;
+    } else if (tid === 'wheel') {
+      t.luck += 30;
+    } else if (tid === 'strength') {
+      t.dmg += 30;
+    } else if (tid === 'emperor') {
+      t.dmg += 10; t.def += 10;
+    } else if (tid === 'justice') {
+      t.dmg += 10; t.crit += 10;
+    } else if (tid === 'fool') {
+      let val = -5 + (p.foolCount || 0);
+      if (val > 30) val = 30;
+      t.hp += val; t.dmg += val; t.mana += val; t.spd += val; t.def += val; t.luck += val;
+      t.crit += val; t.combo += val; t.stun += val; t.dodge += val;
+    } else if (tid === 'devil') {
+      t.maxHpMult *= 0.5;
+      t.dmgMult *= 1.5;
+    } else if (tid === 'judgement') {
+      let val = Math.max(0, 20 - (p.judgementKills || 0));
+      t.hp += val; t.dmg += val; t.mana += val; t.spd += val; t.def += val; t.luck += val;
+    } else if (tid === 'hanged') {
+      if (p.hp < p.maxHp * 0.5) {
+        t.dmg += 30; t.def += 30;
+      }
+    }
+    return t;
+  }
+
+  function getCombatStats() {
+    const tStats = getTarotStats();
+    let baseCombo = 5 + Math.floor(p.spd * 2);
+    let extraCombo = 0;
+    
+    if (monsters && monsters.length > 0) {
+      const aliveMonsters = monsters.filter(m => m.hp > 0);
+      if (aliveMonsters.length > 0) {
+        const maxMSpd = Math.max(...aliveMonsters.map(m => m.spd));
+        if (p.spd > maxMSpd) {
+          const spdDiff = p.spd - maxMSpd;
+          extraCombo = Math.floor(spdDiff * 5);
+        }
+      }
+    }
+
+    return {
+      crit: Math.min(100, Math.max(0, 5 + p.luck * 2 + tStats.crit)),
+      combo: Math.min(85, Math.max(0, baseCombo + extraCombo + tStats.combo)),
+      stun: Math.min(100, Math.max(0, 5 + p.luck * 1 + tStats.stun)),
+      dodge: Math.min(80, Math.max(0, 5 + Math.floor(p.spd * 0.8 + p.luck * 0.5) + tStats.dodge))
+    };
+  }
+
+  function getManaCost(baseCost) {
+    const biome = getBiome();
+    if (biome.id === 'desert' && !p.desertCleared) {
+      return Math.floor(baseCost * 1.25);
+    }
+    return baseCost;
+  }
+
+  function updateUI(shouldSave = true) {
+    const biome = getBiome();
+    document.getElementById('biomeBanner').innerText = biome.name;
+    document.documentElement.style.setProperty('--bg', biome.bg);
+
+    const tStats = getTarotStats();
+
+    let rawMaxHp = (p.baseHp + (p.armor ? p.armor.val * 10 : 0) + tStats.hp * 10) * tStats.maxHpMult;
+    p.maxHp = Math.max(1, Math.floor(rawMaxHp));
+
+    let rawDmg = (p.baseDmg + (p.weapon ? p.weapon.val : 0) + tStats.dmg) * tStats.dmgMult;
+    p.dmg = Math.max(0, Math.floor(rawDmg));
+
+    p.def = Math.max(0, p.baseDef + (p.armor ? p.armor.val : 0) + tStats.def);
+    p.luck = Math.max(0, p.baseLuck + tStats.luck);
+
+    let calculatedMaxMana = p.baseMana + tStats.mana * 10;
+    if (biome.id === 'atlantis') {
+      calculatedMaxMana = Math.floor(calculatedMaxMana * 0.5);
+    }
+    p.maxMana = Math.max(10, calculatedMaxMana);
+    p.mana = Math.min(p.mana, p.maxMana);
+
+    p.spd = Math.max(1, Math.round((p.baseSpd + tStats.spd) * 10) / 10);
+
+    document.getElementById('level').innerText = p.level;
+    document.getElementById('exp').innerText = p.exp;
+    document.getElementById('maxExp').innerText = p.maxExp;
+    document.getElementById('statPoints').innerText = p.statPoints;
+    document.getElementById('portalCount').innerText = p.portalCount;
+    document.getElementById('gold').innerText = p.gold;
+
+    document.getElementById('hp').innerText = Math.max(0, p.hp);
+    document.getElementById('maxHp').innerText = p.maxHp;
+    document.getElementById('dmg').innerText = p.dmg;
+    document.getElementById('mana').innerText = p.mana;
+    document.getElementById('maxMana').innerText = p.maxMana;
+    document.getElementById('spd').innerText = p.spd;
+    document.getElementById('def').innerText = p.def;
+    document.getElementById('luck').innerText = p.luck;
+
+    const statusEl = document.getElementById('statusBadge');
+    let statusHTML = '';
+    if (p.bleedingStatus === 1) statusHTML += '<span style="color:#ef4444;">🩸 Nhiễm Máu (Dễ gặp Cá Mập)</span> ';
+    else if (p.bleedingStatus === 2) statusHTML += '<span style="color:#991b1b;">🩸 Nhiễm Máu Nặng (-1% HP/Cổng)</span> ';
+    if (playerSilencedTurns > 0) statusHTML += `<span style="color:#a855f7;">🔇 Câm Lặng (${playerSilencedTurns} lượt)</span> `;
+    if (p.hasExtraLife) statusHTML += `<span style="color:#10b981;">💖 Có Mạng Dự Phòng (Death)</span> `;
+    if (!statusHTML) statusHTML = '<span style="color:#10b981;">Bình thường</span>';
+    statusEl.innerHTML = statusHTML;
+
+    const rates = getCombatStats();
+    document.getElementById('critRate').innerText = rates.crit + '%';
+    document.getElementById('comboRate').innerText = rates.combo + '%';
+    document.getElementById('stunRate').innerText = rates.stun + '%';
+    document.getElementById('dodgeRate').innerText = rates.dodge + '%';
+
+    document.querySelectorAll('.btn-add').forEach(btn => btn.disabled = p.statPoints <= 0);
+
+    document.getElementById('equippedWeapon').innerText = p.weapon ? `${p.weapon.name} (+${p.weapon.val} DMG)` : 'Tay không';
+    document.getElementById('equippedArmor').innerText = p.armor ? `${p.armor.name} (+${p.armor.val} DEF)` : 'Vải thô';
+    document.getElementById('equippedTarot').innerHTML = p.tarotCard 
+      ? `<span class="tag tag-${p.tarotCard.color}">${p.tarotCard.name}</span>` 
+      : 'Chưa có';
+
+    const skillEl = document.getElementById('skillsList');
+    skillEl.innerHTML = '';
+    p.skills.forEach(sk => {
+      const realCost = getManaCost(sk.cost);
+      skillEl.innerHTML += `<div class="skill-badge">💥 <b>${sk.name}</b> (${sk.desc} - Tốn ${realCost} Mana)</div>`;
+    });
+
+    renderInventoryUI();
+
+    if (shouldSave) {
+      saveGame();
+    }
+  }
+
+  function renderInventoryUI() {
+    const invEl = document.getElementById('inventoryList');
+    invEl.innerHTML = p.inventory.length === 0 ? '<span style="color:var(--subtext); font-size:12px;">Hành trang trống</span>' : '';
+    p.inventory.forEach((item, index) => {
+      let actionBtn = '';
+      if (item.type === 'weapon' || item.type === 'armor') {
+        actionBtn = `<button class="action-btn success" style="padding:3px 6px; font-size:11px;" onclick="equipItem(${index})">Đeo</button>`;
+      } else if (item.type === 'potion') {
+        actionBtn = `<button class="action-btn warning" style="padding:3px 6px; font-size:11px;" onclick="usePotion(${index})">Uống</button>`;
+      }
+
+      invEl.innerHTML += `
+        <div class="item-card">
+          <div>
+            <div><b>${item.icon || '📦'} ${item.name}</b> ${item.rarity ? `<span class="tag tag-${item.rarity.color}">${item.rarity.name}</span>` : ''}</div>
+            <div style="font-size:11px; color:var(--subtext);">${item.desc}</div>
+          </div>
+          <div>
+            ${actionBtn}
+            <button class="action-btn danger" style="padding:3px 6px; font-size:11px;" onclick="sellItem(${index})">Bán (${item.price}V)</button>
+          </div>
+        </div>
+      `;
+    });
+  }
+
+  function addStat(stat) {
+    if (p.statPoints <= 0) return;
+    p.statPoints--;
+    if (stat === 'hp') { p.baseHp += 15; p.hp += 15; }
+    if (stat === 'dmg') p.baseDmg += 2;
+    if (stat === 'mana') { p.baseMana += 15; p.mana += 15; }
+    if (stat === 'spd') p.baseSpd = Math.round((p.baseSpd + 0.5) * 10) / 10;
+    if (stat === 'def') p.baseDef += 1;
+    if (stat === 'luck') p.baseLuck += 1;
+    updateUI();
+  }
+
+  function boostRandomStat(count = 1) {
+    const stats = ['hp', 'dmg', 'mana', 'spd', 'def', 'luck'];
+    for(let i = 0; i < count; i++) {
+      const choice = stats[Math.floor(Math.random() * stats.length)];
+      if (choice === 'hp') { p.baseHp += 10; p.hp += 10; }
+      else if (choice === 'dmg') p.baseDmg += 2;
+      else if (choice === 'mana') { p.baseMana += 10; p.mana += 10; }
+      else if (choice === 'spd') p.baseSpd = Math.round((p.baseSpd + 0.5) * 10) / 10;
+      else if (choice === 'def') p.baseDef += 1;
+      else if (choice === 'luck') p.baseLuck += 1;
+    }
+  }
+
+  function addExp(amount) {
+    p.exp += amount;
+    log(`Nhận được <b style="color:#3b82f6">+${amount} EXP</b>.`);
+    while (p.exp >= p.maxExp) {
+      p.exp -= p.maxExp;
+      p.level++;
+      p.statPoints += 1;
+      p.maxExp = Math.floor(p.maxExp * 1.5);
+      log(`<b style="color:#facc15">🎉 TĂNG CẤP! Đạt cấp ${p.level}. Nhận +1 điểm tiềm năng!</b>`);
+    }
+    updateUI();
+  }
+
+  function addGold(amount) {
+    const biome = getBiome();
+    let finalAmount = amount;
+    if (biome.id === 'desert') {
+      finalAmount = Math.floor(amount * 1.10);
+    }
+    if (p.tarotCard && p.tarotCard.id === 'emperor') {
+      finalAmount = Math.floor(finalAmount * 1.50);
+    }
+    p.gold += finalAmount;
+    return finalAmount;
+  }
+
+  function generateItem(minRarityIdx = 0, maxRarityIdx = 4) {
+    let rarityIndex = minRarityIdx;
+    const roll = Math.random() * 100 + p.luck * 1.5;
+    if (roll > 90 && maxRarityIdx >= 4) rarityIndex = Math.max(rarityIndex, 4);
+    else if (roll > 75 && maxRarityIdx >= 3) rarityIndex = Math.max(rarityIndex, 3);
+    else if (roll > 55 && maxRarityIdx >= 2) rarityIndex = Math.max(rarityIndex, 2);
+    else if (roll > 25 && maxRarityIdx >= 1) rarityIndex = Math.max(rarityIndex, 1);
+
+    rarityIndex = Math.min(rarityIndex, maxRarityIdx);
+    const rarity = RARITIES[rarityIndex];
+    const type = Math.random() < 0.5 ? 'weapon' : 'armor';
+    const val = Math.floor((8 + Math.random() * 8) * rarity.mult);
+    const price = Math.floor(val * 3);
+
+    return {
+      name: (type === 'weapon' ? 'Kiếm ' : 'Giáp ') + rarity.name,
+      icon: type === 'weapon' ? '🗡️' : '🛡️',
+      type: type, rarity: rarity, val: val, price: price,
+      desc: type === 'weapon' ? `+${val} DMG` : `+${val} DEF`
+    };
+  }
+
+  function createPotionItem(size) {
+    if (size === 'S') return { name: 'Lọ Máu (S)', icon: '🧪', type: 'potion', heal: 35, price: 15, desc: 'Hồi 35 HP ngay lập tức' };
+    if (size === 'M') return { name: 'Lọ Máu (M)', icon: '🧪', type: 'potion', heal: 80, price: 35, desc: 'Hồi 80 HP ngay lập tức' };
+    return { name: 'Lọ Máu (L)', icon: '🧪', type: 'potion', heal: 180, price: 70, desc: 'Hồi 180 HP ngay lập tức' };
+  }
+
+  function equipItem(index) {
+    const item = p.inventory[index];
+    if (item.type === 'weapon') {
+      if (p.weapon) p.inventory.push(p.weapon);
+      p.weapon = item;
+    } else if (item.type === 'armor') {
+      if (p.armor) p.inventory.push(p.armor);
+      p.armor = item;
+    }
+    p.inventory.splice(index, 1);
+    log(`Đã trang bị <b>${item.name}</b>.`);
+    updateUI();
+  }
+
+  function usePotion(index) {
+    const item = p.inventory[index];
+    p.hp = Math.min(p.maxHp, p.hp + item.heal);
+    log(`🧪 Uống ${item.name}, hồi phục <b style="color:#10b981">+${item.heal} HP</b>.`);
+    p.inventory.splice(index, 1);
+    updateUI();
+  }
+
+  function sellItem(index) {
+    const item = p.inventory[index];
+    addGold(item.price);
+    p.inventory.splice(index, 1);
+    log(`Đã bán ${item.name} lấy <b style="color:#facc15">${item.price} Vàng</b>.`);
+    updateUI();
+  }
+
+  function showPortals() {
+    document.getElementById('portalSection').style.display = 'block';
+    document.getElementById('interactionSection').style.display = 'none';
+    
+    const biome = getBiome();
+    document.getElementById('eventTitle').innerText = `🌀 Cánh Cổng Thứ ${p.portalCount + 1} (${biome.name})`;
+    document.getElementById('eventDescription').innerText = biome.desc;
+  }
+
+  function openPortal(choice) {
+    p.portalCount++;
+    
+    if (p.portalCount % 10 === 1) {
+      p.desertCleared = false;
+    }
+
+    if (p.tarotCard) {
+      if (p.tarotCard.id === 'fool') {
+        p.foolCount = Math.min(35, (p.foolCount || 0) + 1);
+        let val = -5 + p.foolCount;
+        if (val > 30) val = 30;
+        log(`🃏 The Fool: Chỉ số đang tăng trưởng (${val >= 0 ? '+' + val : val}).`);
+      } 
+      else if (p.tarotCard.id === 'death' && p.deathPending) {
+        p.deathPending = false;
+        p.hasExtraLife = true;
+        p.hp = Math.floor(p.maxHp * 0.5);
+        log(`<b style="color:#10b981">✨ DEATH: Bạn đã sống sót qua cửa! Nhận +1 Mạng dự phòng và hồi 50% Máu!</b>`);
+      } 
+      else if (p.tarotCard.id === 'hanged') {
+        const hpLoss = Math.max(1, Math.floor(p.hp * 0.05));
+        p.hp = Math.max(1, p.hp - hpLoss);
+        log(`<b style="color:#ef4444">🃏 The Hanged Man: Mất ${hpLoss} HP (5% Máu hiện tại).</b>`);
+      }
+    }
+
+    if (p.bleedingStatus === 2) {
+      const bleedDmg = Math.max(1, Math.floor(p.maxHp * 0.01));
+      p.hp -= bleedDmg;
+      log(`<b style="color:#ef4444">🩸 Nhiễm Máu Nặng! Mất ${bleedDmg} HP khi qua cổng...</b>`);
+      if (p.hp <= 0) { checkGameOver(); return; }
+    }
+
+    document.getElementById('portalSection').style.display = 'none';
+    const section = document.getElementById('interactionSection');
+    section.style.display = 'block';
+
+    const biome = getBiome();
+
+    if (p.portalCount % 10 === 0) {
+      startBossFight();
+      return;
+    }
+
+    let events = ['item', 'potion_event', 'trap', 'monster', 'pack_monster', 'merchant', 'vampire', 'sly_merchant', 'jester', 'gold_exp', 'skill_drop'];
+    
+    if (p.portalCount >= 10) {
+      events.push('tarot_reader');
+    }
+
+    if (biome.id === 'desert') {
+      events.push('desert_bandit', 'azzenka');
+    } else if (biome.id === 'atlantis') {
+      events.push('piranha_pack');
+      if (p.bleedingStatus >= 1) events.push('shark_attack', 'shark_attack');
+    }
+
+    const ev = events[Math.floor(Math.random() * events.length)];
+
+    if (ev === 'item') {
+      const item = generateItem(0, 3);
+      p.inventory.push(item);
+      document.getElementById('eventTitle').innerText = "🎁 Rương Kho Báu";
+      section.innerHTML = `<p style="margin-bottom:12px;">Bạn mở rương bí ẩn và nhận được: <b>${item.icon} ${item.name}</b>!</p>
+                           <button class="action-btn" onclick="showPortals()">Đi tiếp</button>`;
+      log(`Tìm thấy vật phẩm: <b>${item.name}</b>.`);
+    } 
+    else if (ev === 'skill_drop') {
+      const unlearned = ALL_SKILLS.filter(sk => !p.skills.some(learned => learned.id === sk.id));
+      if (unlearned.length > 0) {
+        const newSk = unlearned[Math.floor(Math.random() * unlearned.length)];
+        p.skills.push(newSk);
+        document.getElementById('eventTitle').innerText = "📜 Sách Kỹ Năng Cổ";
+        section.innerHTML = `<p style="margin-bottom:12px; color:#ec4899;">Bạn mở cuộn bí kíp và học được Kỹ Năng Mới: <b>💥 ${newSk.name}</b>!</p>
+                             <button class="action-btn" onclick="showPortals()">Đi tiếp</button>`;
+        log(`Đã học kỹ năng mới: <b style="color:#ec4899">${newSk.name}</b>.`);
+      } else {
+        addExp(50);
+        document.getElementById('eventTitle').innerText = "🏛️ Tàn Tích Cổ";
+        section.innerHTML = `<p style="margin-bottom:12px;">Bạn nghiên cứu tàn tích cổ và nhận +50 EXP!</p>
+                             <button class="action-btn" onclick="showPortals()">Đi tiếp</button>`;
+      }
+    }
+    else if (ev === 'potion_event') {
+      const heal = 35 + p.luck * 3;
+      p.hp = Math.min(p.maxHp, p.hp + heal);
+      p.mana = Math.min(p.maxMana, p.mana + 40);
+      document.getElementById('eventTitle').innerText = "⛲ Suối Hồi Phục";
+      section.innerHTML = `<p style="margin-bottom:12px;">Uống nước từ suối thần khôi phục <b style="color:#10b981">+${heal} HP</b> và <b style="color:#3b82f6">+40 Mana</b>.</p>
+                           <button class="action-btn" onclick="showPortals()">Đi tiếp</button>`;
+      log(`Uống nước suối: Hồi phục HP và Mana.`);
+    } 
+    else if (ev === 'trap') {
+      const dmg = Math.max(5, 18 - p.def);
+      p.hp -= dmg;
+      document.getElementById('eventTitle').innerText = "🪵 Bẫy Gai Độc";
+      log(`Trúng bẫy! Mất <b style="color:#ef4444">${dmg} HP</b>.`);
+      if (p.hp <= 0) {
+        checkGameOver();
+      } else {
+        section.innerHTML = `<p style="color:#ef4444; margin-bottom:12px;">Bạn dẫm phải bẫy ngầm và bị mất ${dmg} HP!</p>
+                             <button class="action-btn" onclick="showPortals()">Đi tiếp</button>`;
+      }
+    } 
+    else if (ev === 'gold_exp') {
+      const g = addGold(25 + Math.floor(Math.random() * 25));
+      document.getElementById('eventTitle').innerText = "💰 Túi Vàng Nhàn Rỗi";
+      section.innerHTML = `<p style="margin-bottom:12px;">Nhặt được túi vàng vô chủ có <b style="color:#facc15">${g} Vàng</b>!</p>
+                           <button class="action-btn" onclick="showPortals()">Đi tiếp</button>`;
+      addExp(35);
+    } 
+    else if (ev === 'tarot_reader') startTarotReader();
+    else if (ev === 'desert_bandit') startDesertBandits();
+    else if (ev === 'azzenka') startAzzenkaWitch();
+    else if (ev === 'piranha_pack') startMonsterFight(Math.floor(Math.random() * 3) + 1, false, "🐟 Quái Piranha");
+    else if (ev === 'shark_attack') startMonsterFight(1, false, "🦈 Cá Mập Hung Tàn");
+    else if (ev === 'merchant') startMerchant();
+    else if (ev === 'vampire') startVampireMerchant();
+    else if (ev === 'sly_merchant') startSlyMerchant();
+    else if (ev === 'jester') startJester();
+    else if (ev === 'monster') startMonsterFight(1, false);
+    else if (ev === 'pack_monster') startMonsterFight(Math.floor(Math.random() * 2) + 2, false);
+
+    updateUI();
+  }
+
+  function getRandomTarotCards(count = 3) {
+    let pool = [];
+    TAROT_CARDS.forEach(card => {
+      for (let i = 0; i < card.weight; i++) pool.push(card);
+    });
+    let chosen = [];
+    let poolCopy = [...pool];
+    while (chosen.length < count && poolCopy.length > 0) {
+      const randIdx = Math.floor(Math.random() * poolCopy.length);
+      const card = poolCopy[randIdx];
+      if (!chosen.some(c => c.id === card.id)) {
+        chosen.push(card);
+      }
+      poolCopy = poolCopy.filter(c => c.id !== card.id);
+    }
+    return chosen;
+  }
+
+  function startTarotReader() {
+    document.getElementById('eventTitle').innerText = "🔮 Pháp Sư Tarot";
+    const section = document.getElementById('interactionSection');
+
+    let html = `
+      <p style="margin-bottom:12px; color:#a855f7;">
+        "Vận mệnh nằm trong những lá bài... Chi <b>300 Vàng</b> để ta khai phá tiềm năng cho ngươi!"
+      </p>
+      <div style="margin-bottom:12px; font-size:13px;">
+        <b>Thẻ Tarot hiện tại:</b> ${p.tarotCard ? `<span class="tag tag-${p.tarotCard.color}">${p.tarotCard.name}</span> - ${p.tarotCard.desc}` : 'Chưa sở hữu'}
+      </div>
+      <button class="action-btn jester" onclick="drawTarotCards()">🔮 Xem Bói Tarot (300 Vàng)</button>
+      <button class="action-btn" onclick="showPortals()">Rời Đi</button>
+    `;
+    section.innerHTML = html;
+  }
+
+  function drawTarotCards() {
+    if (p.gold < 300) {
+      alert("Bạn không đủ 300 Vàng để xem bài Tarot!");
+      return;
+    }
+    p.gold -= 300;
+    currentTarotChoices = getRandomTarotCards(3);
+    renderTarotSelectionUI();
+    updateUI();
+  }
+
+  function renderTarotSelectionUI() {
+    document.getElementById('eventTitle').innerText = "🔮 Lựa Chọn Thẻ Bài Tarot";
+    const section = document.getElementById('interactionSection');
+
+    let cardsHTML = `<div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:10px; margin-bottom:12px;">`;
+    currentTarotChoices.forEach((card, idx) => {
+      cardsHTML += `
+        <div class="monster-card" style="border-color:var(--accent); text-align:center;">
+          <span class="tag tag-${card.color}">${card.rarity}</span>
+          <h4 style="color:#f59e0b; margin:6px 0;">🃏 ${card.name}</h4>
+          <p style="font-size:12px; color:var(--text); margin-bottom:10px;">${card.desc}</p>
+          <button class="action-btn success" onclick="selectTarotCard(${idx})">Chọn Lá Bài Này</button>
+        </div>
+      `;
+    });
+    cardsHTML += `</div>`;
+
+    let html = `
+      <p style="margin-bottom:8px; color:var(--subtext);">Chọn 1 trong 3 lá bài Tarot bên dưới (mỗi lần chỉ được mang 1 thẻ):</p>
+      ${cardsHTML}
+      <div style="margin-top:10px;">
+        <button class="action-btn warning" onclick="showPortals()">Bỏ Qua / Giữ Thẻ Cũ</button>
+      </div>
+    `;
+    section.innerHTML = html;
+  }
+
+  function selectTarotCard(idx) {
+    const chosen = currentTarotChoices[idx];
+    p.tarotCard = chosen;
+    
+    p.foolCount = 0;
+    p.judgementKills = 0;
+    p.deathPending = false;
+
+    if (chosen.id === 'death') {
+      p.hp = 1;
+      p.deathPending = true;
+      log(`<b style="color:#ef4444">💀 THẺ DEATH: Máu của bạn lập tức giảm về 1 HP! Hãy sống sót qua cửa tiếp theo để nhận quà!</b>`);
+    } else {
+      log(`🎴 Đã nhận thẻ Tarot: <b style="color:#f59e0b">${chosen.name}</b>!`);
+    }
+
+    updateUI();
+    showPortals();
+  }
+
+  function startDesertBandits() {
+    const count = Math.floor(Math.random() * 3) + 1;
+    document.getElementById('eventTitle').innerText = "🏜️ Băng Cướp Sa Mạc Phục Kích!";
+    const section = document.getElementById('interactionSection');
+    
+    section.innerHTML = `
+      <p style="margin-bottom:12px;">Toán cướp gồm ${count} tên xông ra bao vây bạn! Chúng đòi 35% Vàng và 35% EXP hiện tại để tha mạng.</p>
+      <button class="action-btn danger" onclick="startMonsterFight(${count}, false, 'Cướp Sa Mạc')">⚔️ Giao Chiến</button>
+      <button class="action-btn warning" onclick="payDesertBandits()">🏜️ Trả 35% Vàng & EXP để đi tiếp</button>
+    `;
+  }
+
+  function payDesertBandits() {
+    const goldLost = Math.floor(p.gold * 0.35);
+    const expLost = Math.floor(p.exp * 0.35);
+    p.gold -= goldLost;
+    p.exp -= expLost;
+    log(`🏜️ Đã giao <b style="color:#facc15">${goldLost} Vàng</b> và <b style="color:#3b82f6">${expLost} EXP</b> cho Băng Cướp Sa Mạc.`);
+    updateUI();
+    showPortals();
+  }
+
+  function startAzzenkaWitch() {
+    document.getElementById('eventTitle').innerText = "🧙‍♂️ Phù Thủy Sa Mạc Azzenka";
+    const section = document.getElementById('interactionSection');
+    const goldCost = Math.floor(p.gold * 0.25);
+
+    section.innerHTML = `
+      <p style="margin-bottom:12px; color:#a855f7;">"Ta có thể dùng ma thuật cát giúp ngươi giải tỏa cơn khát hoặc ban thêm sức mạnh Mana... Giá là 25% số vàng (${goldCost}V)."</p>
+      <button class="action-btn success" onclick="payAzzenka('clean')">✨ Hóa giải Debuff Mana Sa Mạc</button>
+      <button class="action-btn warning" onclick="payAzzenka('boost')">💧 Tăng 10% Chỉ Số Mana Tối Đa</button>
+      <button class="action-btn" onclick="showPortals()">Rời Đi</button>
+    `;
+  }
+
+  function payAzzenka(option) {
+    const goldCost = Math.floor(p.gold * 0.25);
+    if (p.gold < goldCost || goldCost <= 0) { alert("Bạn không đủ tiền!"); return; }
+
+    p.gold -= goldCost;
+    if (option === 'clean') {
+      p.desertCleared = true;
+      log(`AZZENKA: Đã xóa bỏ Debuff +25% Mana Sa Mạc!`);
+    } else if (option === 'boost') {
+      p.baseMana = Math.floor(p.baseMana * 1.10);
+      log(`AZZENKA: Đã gia tăng +10% Mana tối đa cho bạn!`);
+    }
+    updateUI();
+    showPortals();
+  }
+
+  function startMerchant() {
+    document.getElementById('eventTitle').innerText = "🛒 Thương Nhân Bình Thường";
+    const potSizes = ['S', 'M', 'L'];
+    const chosenPot = createPotionItem(potSizes[Math.floor(Math.random() * potSizes.length)]);
+    const shopItems = [chosenPot, generateItem(0, 2), generateItem(0, 2)];
+
+    let html = `<p style="margin-bottom:12px; color:var(--subtext);">"Tôi bán đồ tốt giá phải chăng đây!"</p>`;
+    shopItems.forEach((item) => {
+      html += `<div class="item-card" style="margin-bottom:8px;">
+                 <div><b>${item.icon} ${item.name}</b> (${item.desc})</div>
+                 <button class="action-btn success" onclick="buyMerchantItem('${item.name}', '${item.type}', ${item.val || 0}, ${item.heal || 0}, ${item.price}, '${item.icon}')">Mua (${item.price}V)</button>
+               </div>`;
+    });
+    html += `<button class="action-btn" style="margin-top:8px;" onclick="showPortals()">Rời Đi</button>`;
+    document.getElementById('interactionSection').innerHTML = html;
+  }
+
+  function buyMerchantItem(name, type, val, heal, price, icon) {
+    if (p.gold < price) { alert("Không đủ vàng!"); return; }
+    p.gold -= price;
+    p.inventory.push({ name, type, val, heal, price: Math.floor(price / 2), icon, desc: type === 'potion' ? `Hồi ${heal} HP` : (type === 'weapon' ? `+${val} DMG` : `+${val} DEF`) });
+    log(`Đã mua <b>${name}</b>.`);
+    updateUI();
+    startMerchant();
+  }
+
+  function startJester() {
+    jesterGambled = false;
+    document.getElementById('eventTitle').innerText = "🃏 Thương Nhân Bí Uẩn Jester";
+    
+    jesterItems = [
+      createPotionItem('L'),
+      generateItem(1, 3),
+      generateItem(2, 4)
+    ];
+    renderJesterUI();
+  }
+
+  function renderJesterUI() {
+    let html = `<p style="margin-bottom:12px; color:#a855f7;">"Trò chơi may rủi hoặc mua bán trang bị bí truyền!"</p>`;
+    
+    html += `<div class="shop-box"><h4 style="color:#f59e0b; margin-bottom:8px;">🎪 Gian Hàng Bí Uẩn:</h4>`;
+    jesterItems.forEach((item, idx) => {
+      html += `<div class="item-card" style="margin-bottom:6px;">
+                 <div><b>${item.icon} ${item.name}</b> (${item.desc})</div>
+                 <button class="action-btn success" onclick="buyJesterItem(${idx})">Mua (${item.price}V)</button>
+               </div>`;
+    });
+    html += `</div>`;
+
+    html += `
+      <div style="margin-bottom:12px;">
+        <button class="action-btn warning" onclick="buyStatPoint(120)">✨ Mua +1 Điểm Tiềm Năng (120V)</button>
+      </div>
+      <p style="font-size:12px; color:var(--subtext);">Tung Đồng Xu (Đoán đúng: x2 Vàng | Sai: Mất 50% Vàng - Chỉ 1 lần):</p>
+      <button class="action-btn jester" ${jesterGambled ? 'disabled' : ''} onclick="gambleCoin('head')">🪙 Đoán NGỬA</button>
+      <button class="action-btn jester" ${jesterGambled ? 'disabled' : ''} onclick="gambleCoin('tail')">🪙 Đoán SẤP</button><br>
+      <button class="action-btn" style="margin-top:12px;" onclick="showPortals()">Rời Đi</button>`;
+    
+    document.getElementById('interactionSection').innerHTML = html;
+  }
+
+  function buyJesterItem(idx) {
+    const item = jesterItems[idx];
+    if (!item) return;
+    if (p.gold < item.price) { alert("Không đủ vàng!"); return; }
+    p.gold -= item.price;
+    p.inventory.push({ ...item, price: Math.floor(item.price / 2) });
+    log(`JESTER: Đã bán cho bạn <b>${item.name}</b>!`);
+    jesterItems.splice(idx, 1);
+    updateUI();
+    renderJesterUI();
+  }
+
+  function buyStatPoint(cost) {
+    if (p.gold < cost) { alert("Không đủ vàng!"); return; }
+    p.gold -= cost;
+    p.statPoints += 1;
+    log(`JESTER: Mua thành công +1 Điểm Tiềm Năng!`);
+    updateUI();
+    renderJesterUI();
+  }
+
+  function gambleCoin(choice) {
+    if (jesterGambled || p.gold <= 0) return;
+    jesterGambled = true;
+
+    const result = Math.random() < 0.5 ? 'head' : 'tail';
+    if (choice === result) {
+      p.gold = p.gold * 2;
+      log(`<b style="color:#10b981">JESTER: ĐOÁN ĐÚNG! Số vàng nhân đôi thành ${p.gold}V!</b>`);
+    } else {
+      const lost = Math.floor(p.gold * 0.5);
+      p.gold -= lost;
+      log(`<b style="color:#ef4444">JESTER: Đoán sai! Bị mất ${lost}V.</b>`);
+    }
+    updateUI();
+    renderJesterUI();
+  }
+
+  function startVampireMerchant() {
+    vampireGambled = false;
+    document.getElementById('eventTitle').innerText = "🧛‍♂️ Huyết Thương Nhân Vampire";
+    renderVampireUI();
+  }
+
+  function renderVampireUI() {
+    let html = `<p style="margin-bottom:12px; color:#ef4444;">"Máu của ngươi có mùi vị thật tuyệt vời... Đổi máu lấy sức mạnh tối thượng chứ?"</p>
+      <div style="margin-bottom:12px;">
+        <button class="action-btn vampire" onclick="vampireTradeHP()">🩸 Trao Đổi Máu (Mất 10-35% Máu hiện tại)</button>
+      </div>
+      <div>
+        <button class="action-btn danger" ${vampireGambled ? 'disabled' : ''} onclick="vampireGambleLife()">💀 Cược Mạng (Mất 50% Máu tối đa)</button>
+      </div>
+      <button class="action-btn" style="margin-top:12px;" onclick="showPortals()">Rời Đi</button>`;
+    document.getElementById('interactionSection').innerHTML = html;
+  }
+
+  function vampireTradeHP() {
+    if (p.hp <= 5) { alert("Máu của bạn quá thấp!"); return; }
+    const pct = (Math.floor(Math.random() * 26) + 10) / 100;
+    const hpCost = Math.max(1, Math.floor(p.hp * pct));
+    p.hp -= hpCost;
+    
+    const boostCount = Math.floor(Math.random() * 3) + 1;
+    boostRandomStat(boostCount);
+    log(`<b style="color:#ef4444">VAMPIRE: Hút ${hpCost} HP! Nhận +${boostCount} nâng cấp chỉ số.</b>`);
+    updateUI();
+    renderVampireUI();
+  }
+
+  function vampireGambleLife() {
+    if (vampireGambled) return;
+    vampireGambled = true;
+    const hpCost = Math.floor(p.maxHp * 0.5);
+    p.hp = Math.max(1, p.hp - hpCost);
+
+    const boostCount = Math.floor(Math.random() * 4) + 2;
+    boostRandomStat(boostCount);
+    log(`<b style="color:#991b1b">VAMPIRE: Bạn đã cược mạng! Mất ${hpCost} HP nhận +${boostCount} chỉ số!</b>`);
+    updateUI();
+    renderVampireUI();
+  }
+
+  function startSlyMerchant() {
+    document.getElementById('eventTitle').innerText = "🦊 Gian Thương Lanh Lợi";
+    const boxCost = 60 + p.portalCount * 5;
+
+    let html = `<p style="margin-bottom:12px; color:#f59e0b;">"Mở hòm may mắn đi quý khách!" (Giá: <b>${boxCost}V</b>/Hòm)</p>
+                <div style="display:flex; gap:8px; margin-bottom:12px;">
+                  <button class="action-btn warning" onclick="buyMysteryBox(1, ${boxCost})">📦 Hòm #1</button>
+                  <button class="action-btn warning" onclick="buyMysteryBox(2, ${boxCost})">📦 Hòm #2</button>
+                  <button class="action-btn warning" onclick="buyMysteryBox(3, ${boxCost})">📦 Hòm #3</button>
+                </div>
+                <button class="action-btn" onclick="showPortals()">Rời Đi</button>`;
+    document.getElementById('interactionSection').innerHTML = html;
+  }
+
+  function buyMysteryBox(boxNum, cost) {
+    if (p.gold < cost) { alert("Không đủ tiền mua Hòm!"); return; }
+    p.gold -= cost;
+    const roll = Math.random() * 100;
+    if (roll < 50) {
+      log(`📦 Hòm #${boxNum}: Rỗng tuếch! Bạn bị lừa mất ${cost}V.`);
+      alert("Hòm rỗng! Bạn chả nhận được gì!");
+    } else if (roll < 85) {
+      const epicItem = generateItem(2, 4);
+      p.inventory.push(epicItem);
+      log(`📦 Hòm #${boxNum}: Mở ra <b>${epicItem.name}</b>!`);
+      alert(`Mở được: ${epicItem.name}!`);
+    } else {
+      p.statPoints += 1;
+      log(`📦 Hòm #${boxNum}: Mở ra +1 Điểm Tiềm Năng!`);
+      alert("Mở được +1 Điểm Tiềm Năng!");
+    }
+    updateUI();
+  }
+
+  function startMonsterFight(count = 1, bossMode = false, customName = null) {
+    isBoss = bossMode;
+    playerStunned = false;
+    monsters = [];
+    targetMonsterIdx = 0;
+
+    const scale = p.portalCount;
+    const biome = getBiome();
+
+    for (let i = 0; i < count; i++) {
+      let mName = customName ? (count > 1 ? `${customName} #${i+1}` : customName) : `Quái Cổng ${p.portalCount}`;
+      let baseHp = Math.floor((35 + scale * 8) / (count > 1 ? 1.3 : 1));
+      let baseDmg = Math.floor((7 + scale * 1.5) / (count > 1 ? 1.2 : 1));
+      let mult = 1.0;
+
+      if (isBoss) {
+        if (biome.id === 'desert') {
+          mName = "🏜️ BOSS SA MẠC ANUBIS";
+          mult = 0.8;
+        } else if (biome.id === 'atlantis') {
+          mName = "🌊 BOSS ATLANTIS POSEIDON";
+          mult = 1.2;
+        } else {
+          mName = "🍃 BOSS ĐỒNG BẰNG TẦNG " + p.portalCount;
+        }
+        baseHp = Math.floor((140 + scale * 20) * mult);
+        baseDmg = Math.floor((14 + scale * 2.5) * mult);
+      }
+
+      let subMult = (isBoss && biome.id === 'plain') ? 0.5 : 1.0;
+
+      monsters.push({
+        id: i,
+        name: mName,
+        hp: baseHp, maxHp: baseHp,
+        dmg: baseDmg,
+        spd: isBoss ? 6 + scale : 2 + Math.floor(Math.random() * 5),
+        def: isBoss ? 4 + scale : Math.floor(scale / 3),
+        crit: Math.min(30, (3 + scale) * subMult),
+        combo: Math.min(25, (2 + scale) * subMult),
+        stun: Math.min(20, (2 + scale) * subMult),
+        dodge: Math.min(25, (2 + scale) * subMult),
+        isStunned: false,
+        wasKilled: false
+      });
+    }
+
+    document.getElementById('eventTitle').innerText = isBoss ? "⚠️ THÁCH THỨC BOSS ⚠️" : "⚔️ GIAO CHIẾN!";
+    renderCombatUI();
+
+    const maxMonsterSpd = Math.max(...monsters.map(m => m.spd));
+    enemyFaster = (p.spd < maxMonsterSpd);
+
+    if (enemyFaster) {
+      log(`<b style="color:#ef4444">⚠️ Tốc độ kẻ địch cao hơn! Kẻ địch sẽ ra đòn ngay khi bạn thực hiện hành động.</b>`);
+    } else {
+      log(`<b style="color:#10b981">⚡ Tốc độ của bạn cao hơn! Bạn được ra đòn trước.</b>`);
+    }
+    updateUI();
+  }
+
+  function selectTarget(idx) {
+    if (monsters[idx] && monsters[idx].hp > 0) {
+      targetMonsterIdx = idx;
+      renderCombatUI();
+    }
+  }
+
+  function renderCombatUI() {
+    const section = document.getElementById('interactionSection');
+    
+    let monsterCards = `<div class="monster-grid">`;
+    monsters.forEach((m, idx) => {
+      const isDead = m.hp <= 0;
+      const isSelected = idx === targetMonsterIdx && !isDead;
+      monsterCards += `
+        <div class="monster-card ${isSelected ? 'selected' : ''}" style="${isDead ? 'opacity:0.3; cursor:default;' : ''}" onclick="selectTarget(${idx})">
+          ${isSelected ? '<span class="target-badge">🎯 Mục Tiêu</span>' : ''}
+          <h4 style="color:#ef4444; font-size:13px;">${m.name}</h4>
+          <p style="font-size:11px; color:var(--subtext);">HP: <b style="color:#fff">${Math.max(0, m.hp)}/${m.maxHp}</b></p>
+          <p style="font-size:11px; color:var(--subtext);">DMG: ${m.dmg} | DEF: ${m.def} | SPD: ${m.spd}</p>
+        </div>
+      `;
+    });
+    monsterCards += `</div>`;
+
+    const atkMana = getManaCost(2);
+    let attackBtns = `<button class="action-btn danger" onclick="playerAction('attack')">🗡️ Đánh Thường (-${atkMana} Mana)</button>`;
+    
+    if (p.skills && p.skills.length > 0) {
+      p.skills.forEach((sk, idx) => {
+        const cost = getManaCost(sk.cost);
+        const disabled = playerSilencedTurns > 0 ? 'disabled' : '';
+        attackBtns += `<button class="action-btn skill" ${disabled} onclick="playerAction('skill', ${idx})">💥 ${sk.name} (-${cost} Mana)</button>`;
+      });
+    }
+
+    const defMana = getManaCost(1);
+    const fleeMana = getManaCost(5);
+
+    let otherBtns = `<button class="action-btn" onclick="playerAction('defend')">🛡️ Phòng Thủ & Phản Đòn (-${defMana} Mana)</button>`;
+    if (!isBoss) {
+      otherBtns += `<button class="action-btn warning" onclick="playerAction('flee')">🏃 Bỏ Chạy (-${fleeMana} Mana)</button>`;
+    }
+
+    section.innerHTML = monsterCards + `<div>${attackBtns} ${otherBtns}</div>`;
+  }
+
+  function playerAction(type, skillIdx = null) {
+    if (playerStunned) {
+      log("<b style='color:#a855f7'>🌀 Bạn đang bị Choáng và mất lượt này!</b>");
+      playerStunned = false;
+      monstersTurn();
+      return;
+    }
+
+    let requiredMana = 0;
+    if (type === 'attack') requiredMana = getManaCost(2);
+    else if (type === 'skill') {
+      if (playerSilencedTurns > 0) { log("<b style='color:#a855f7'>Bạn đang bị Câm Lặng, không thể dùng chiêu!</b>"); return; }
+      requiredMana = getManaCost(p.skills[skillIdx].cost);
+    } 
+    else if (type === 'defend') requiredMana = getManaCost(1);
+    else if (type === 'flee') requiredMana = getManaCost(5);
+
+    if (p.mana < requiredMana) {
+      log("<b style='color:#ef4444'>Không đủ Mana để thực hiện hành động này!</b>");
+      return;
+    }
+
+    if (!monsters[targetMonsterIdx] || monsters[targetMonsterIdx].hp <= 0) {
+      const aliveIdx = monsters.findIndex(m => m.hp > 0);
+      if (aliveIdx !== -1) targetMonsterIdx = aliveIdx;
+      else { winCombat(); return; }
+    }
+
+    p.mana -= requiredMana;
+
+    if (enemyFaster) {
+      monstersTurn(type === 'defend');
+      if (p.hp <= 0) return;
+    }
+
+    if (type === 'attack') {
+      executePlayerAttack(monsters[targetMonsterIdx], 1.0, 0);
+
+      if (checkAllMonstersDead()) { winCombat(); return; }
+
+      const rates = getCombatStats();
+      if (Math.random() * 100 < rates.combo && monsters[targetMonsterIdx].hp > 0) {
+        log("<b style='color:#3b82f6'>⚡ LIÊN KÍCH! Đánh thêm một đòn!</b>");
+        executePlayerAttack(monsters[targetMonsterIdx], 1.0, 0);
+        if (checkAllMonstersDead()) { winCombat(); return; }
+      }
+    } 
+    else if (type === 'skill') {
+      const sk = p.skills[skillIdx];
+      log(`<b style="color:#ec4899">🔥 Thi triển [${sk.name}] lên ${monsters[targetMonsterIdx].name}!</b>`);
+      executePlayerAttack(monsters[targetMonsterIdx], sk.dmgMult, sk.stunChance);
+
+      if (checkAllMonstersDead()) { winCombat(); return; }
+    }
+    else if (type === 'defend') {
+      log("<b style='color:#3b82f6'>🛡️ Phòng thủ, sẵn sàng phản đòn!</b>");
+    }
+    else if (type === 'flee') {
+      if (Math.random() * 100 < 55) {
+        log("<b style='color:#10b981'>🏃 Tẩu thoát thành công!</b>");
+        showPortals();
+        updateUI();
+        return;
+      } else {
+        log("<b style='color:#ef4444'>Bỏ chạy thất bại!</b>");
+      }
+    }
+
+    if (playerSilencedTurns > 0) playerSilencedTurns--;
+
+    if (!enemyFaster) {
+      monstersTurn(type === 'defend');
+      if (p.hp <= 0) return;
+    }
+
+    updateUI();
+    renderCombatUI();
+  }
+
+  function executePlayerAttack(target, multiplier = 1.0, extraStun = 0) {
+    const rates = getCombatStats();
+
+    if (Math.random() * 100 < target.dodge) {
+      log(`<b style="color:#10b981">${target.name} Né Đòn thành công!</b>`);
+      return;
+    }
+
+    let baseDmg = Math.max(1, Math.floor((p.dmg * multiplier) - target.def));
+    let critMult = (p.tarotCard && p.tarotCard.id === 'justice') ? 3.0 : 1.8;
+
+    if (Math.random() * 100 < rates.crit) {
+      baseDmg = Math.floor(baseDmg * critMult);
+      log(`<b style="color:#f59e0b">🎯 CHÍ MẠNG (x${critMult})! Gây ${baseDmg} DMG lên ${target.name}!</b>`);
+    } else {
+      log(`Gây <b>${baseDmg} DMG</b> lên ${target.name}.`);
+    }
+
+    target.hp -= baseDmg;
+
+    if (target.hp <= 0 && !target.wasKilled) {
+      target.wasKilled = true;
+      if (p.tarotCard && p.tarotCard.id === 'judgement') {
+        p.judgementKills = (p.judgementKills || 0) + 1;
+        log(`⚖️ Judgement: Diệt kẻ thù, các chỉ số giảm 1 điểm.`);
+      }
+    }
+
+    const totalStunRate = Math.min(100, rates.stun + extraStun);
+    if (Math.random() * 100 < totalStunRate && target.hp > 0) {
+      target.isStunned = true;
+      log(`<b style="color:#a855f7">💫 ${target.name} đã bị CHOÁNG!</b>`);
+    }
+  }
+
+  function monstersTurn(isDefending = false) {
+    if (checkAllMonstersDead()) return;
+
+    const biome = getBiome();
+
+    monsters.forEach(m => {
+      if (m.hp <= 0 || p.hp <= 0) return;
+
+      if (m.isStunned) {
+        log(`<b style="color:#a855f7">${m.name} bị choáng nên không thể đánh!</b>`);
+        m.isStunned = false;
+        return;
+      }
+
+      if (isBoss && biome.id === 'desert' && Math.random() < 0.10) {
+        playerSilencedTurns = 3;
+        log(`<b style="color:#a855f7">🔮 ANUBIS dùng LỜI CỦA CÁT! Bạn bị CÂM LẶNG 3 lượt (Không thể dùng chiêu, DMG Anubis giảm 50%)!</b>`);
+      }
+
+      if (isBoss && biome.id === 'atlantis' && Math.random() < 0.50) {
+        log(`<b style="color:#3b82f6">🌊 POSEIDON dùng XOÁY NƯỚC BIỂN!</b>`);
+        if (Math.random() < 0.25) {
+          playerStunned = true;
+          log(`<b style="color:#a855f7">😵‍💫 Bạn bị Xoáy Nước làm CHOÁNG!</b>`);
+        }
+      }
+
+      executeMonsterAttack(m, isDefending);
+    });
+
+    updateUI();
+
+    if (p.hp <= 0) {
+      checkGameOver();
+      return;
+    }
+  }
+
+  function executeMonsterAttack(monster, isDefending = false) {
+    const rates = getCombatStats();
+    const biome = getBiome();
+
+    if (Math.random() * 100 < rates.dodge) {
+      log(`<b style="color:#10b981">🌀 Né thành công đòn của ${monster.name}!</b>`);
+      return;
+    }
+
+    let rawDmg = monster.dmg;
+    if (playerSilencedTurns > 0 && isBoss && biome.id === 'desert') {
+      rawDmg = Math.floor(rawDmg * 0.5);
+    }
+
+    if (Math.random() * 100 < monster.crit) {
+      rawDmg = Math.floor(rawDmg * 1.7);
+      log(`<b style="color:#ef4444">💥 ${monster.name} đánh CHÍ MẠNG!</b>`);
+    }
+
+    if (biome.id === 'atlantis') {
+      const reducePct = (Math.floor(Math.random() * 11) + 5) / 100;
+      rawDmg = Math.floor(rawDmg * (1 - reducePct));
+    }
+
+    let taken = Math.max(1, rawDmg - p.def);
+
+    if (isDefending) {
+      taken = Math.max(1, Math.floor(taken * 0.5));
+      if (Math.random() < 0.5) {
+        const reflectPct = (Math.floor(Math.random() * 41) + 10) / 100;
+        const reflectDmg = Math.max(1, Math.floor(rawDmg * reflectPct));
+        monster.hp -= reflectDmg;
+        log(`<b style="color:#3b82f6">⚔️ PHẢN ĐÒN! Đánh bật lại ${reflectDmg} DMG lên ${monster.name}!</b>`);
+      }
+    }
+
+    p.hp -= taken;
+    log(`${monster.name} gây <b style="color:#ef4444">${taken} DMG</b> lên bạn.`);
+
+    if (monster.name.includes('Piranha') && Math.random() < 0.05) {
+      p.bleedingStatus = Math.max(p.bleedingStatus, 1);
+      log(`<b style="color:#ef4444">🩸 Bạn bị Piranha cắn trúng gây NHIỄM MÁU! (Thu hút Cá Mập)</b>`);
+    }
+    if (monster.name.includes('Cá Mập') && Math.random() < 0.10) {
+      p.bleedingStatus = 2;
+      log(`<b style="color:#991b1b">🩸 Bị Cá Mập xé thịt! NHIỄM MÁU NẶNG (-1% HP mỗi cửa)!</b>`);
+    }
+
+    if (Math.random() * 100 < monster.stun && p.hp > 0) {
+      playerStunned = true;
+      log(`<b style="color:#a855f7">😵‍💫 Bạn bị ${monster.name} đánh CHOÁNG!</b>`);
+    }
+  }
+
+  function checkAllMonstersDead() {
+    return monsters.every(m => m.hp <= 0);
+  }
+
+  function winCombat() {
+    log(`<b style="color:#10b981">🎉 Tiêu diệt toàn bộ kẻ địch!</b>`);
+    addExp(45 + p.portalCount * 6);
+    addGold(25 + p.portalCount * 3);
+
+    if (isBoss) {
+      const chestItem = generateItem(2, 4);
+      p.inventory.push(chestItem);
+      log(`<b style="color:#a855f7">🏆 THẮNG BOSS! Mở rương nhận trang bị: ${chestItem.name}!</b>`);
+    }
+
+    document.getElementById('interactionSection').innerHTML = `
+      <p style="margin-bottom:12px; color:#10b981;">Chiến thắng rực rỡ!</p>
+      <button class="action-btn" onclick="showPortals()">Tiếp tục bước qua cổng</button>
+    `;
+  }
+
+  function startBossFight() {
+    startMonsterFight(1, true);
+  }
+
+  function checkGameOver() {
+    if (p.hp <= 0) {
+      if (p.hasExtraLife) {
+        p.hasExtraLife = false;
+        p.hp = Math.floor(p.maxHp * 0.5);
+        log(`<b style="color:#10b981">💖 HỒI SINH! Mạng dự phòng từ Thẻ Death đã cứu bạn khỏi cái chết và hồi 50% HP!</b>`);
+        updateUI();
+        return;
+      }
+
+      p.hp = 0;
+      document.getElementById('eventTitle').innerText = "☠️ BẠN ĐÃ BỊ HẠ GỤC!";
+      const section = document.getElementById('interactionSection');
+      document.getElementById('portalSection').style.display = 'none';
+      section.style.display = 'block';
+
+      const canRevive = p.gold >= 500;
+
+      section.innerHTML = `
+        <p style="color:#ef4444; margin-bottom:8px; font-weight:bold; font-size:14px;">
+          Hành trình dừng lại tại Cổng #${p.portalCount}.
+        </p>
+        <p style="margin-bottom:12px; font-size:13px; color:var(--subtext);">
+          Số vàng hiện tại: <b style="color:#facc15">${p.gold}/500 Vàng</b>
+        </p>
+        <div style="display:flex; flex-direction:column; gap:10px; max-width:400px;">
+          ${canRevive 
+            ? `<button class="action-btn success" style="padding:10px;" onclick="revivePlayer()">✨ Hồi Sinh (Mất 500 Vàng - Giữ Nguyên Mọi Thứ)</button>`
+            : `<button class="action-btn" style="padding:10px; opacity:0.5; cursor:not-allowed;" disabled>❌ Không Đủ 500 Vàng Để Hồi Sinh</button>`
+          }
+          <button class="action-btn danger" style="padding:10px;" onclick="resetGame()">🔄 Chơi Lại Từ Đầu (Xóa Save)</button>
+        </div>
+      `;
+    }
+  }
+
+  function revivePlayer() {
+    if (p.gold < 500) return;
+    p.gold -= 500;
+    p.hp = p.maxHp;
+    p.bleedingStatus = 0;
+    playerSilencedTurns = 0;
+
+    log(`<b style="color:#10b981">✨ Đã tiêu 500 Vàng để Hồi Sinh! Giữ nguyên toàn bộ chỉ số, trang bị và EXP.</b>`);
+    updateUI();
+    showPortals();
+  }
+
+  function resetGame() {
+    localStorage.removeItem(SAVE_KEY);
+    location.reload();
+  }
+
+  // KHỞI CHẠY GAME & TẢI SAVE
+  const hasLoaded = loadGame();
+  if (hasLoaded) {
+    log('<b style="color:#10b981">📥 Đã khôi phục dữ liệu game từ lần chơi trước!</b>');
+  } else {
+    log('🎮 Chào mừng bạn đến với Cánh Cổng Bí Ẩn!');
+  }
+
+  updateUI(false);
+  showPortals();
+</script>
+</body>
+</html>

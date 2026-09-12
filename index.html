@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VSClox Platform - Game Hub & Studio</title>
+    <!-- Tailwind CSS v4 -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .glass { background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(12px); }
+        @keyframes portalPulse {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 15px rgba(168, 85, 247, 0.6)); }
+            50% { transform: scale(1.05); filter: drop-shadow(0 0 25px rgba(168, 85, 247, 0.9)); }
+        }
+        .portal-glow { animation: portalPulse 3s infinite ease-in-out; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans min-h-screen flex flex-col antialiased">
+
+    <!-- MAIN APP WRAPPER -->
+    <div id="app" class="min-h-screen flex flex-col"></div>
+
+    <!-- MODAL CONTAINER -->
+    <div id="modalContainer"></div>
+
+    <!-- CHATBOT AI WIDGET -->
+    <div id="aiChatbotWidget" class="fixed bottom-5 right-5 z-40 hidden">
+        <div id="chatWindow" class="hidden w-80 sm:w-96 bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl overflow-hidden mb-3 flex flex-col h-[420px]">
+            <div class="bg-gradient-to-r from-red-600 to-indigo-600 p-3.5 px-4 flex items-center justify-between text-white">
+                <div class="flex items-center space-x-2">
+                    <div class="w-7 h-7 rounded-full bg-white/20 flex items-center justify-center text-xs">
+                        <i class="fa-solid fa-robot"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-bold text-sm leading-tight">VSClox AI Assistant</h4>
+                        <span class="text-[10px] text-emerald-300 flex items-center gap-1">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping"></span> Trực tuyến
+                        </span>
+                    </div>
+                </div>
+                <button onclick="toggleChat()" class="text-white/80 hover:text-white text-sm"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="chatMessages" class="flex-1 p-3 overflow-y-auto space-y-3 text-xs"></div>
+            <div class="p-2.5 bg-slate-950 border-t border-slate-800 flex gap-2">
+                <input type="text" id="chatInput" onkeypress="handleChatKeyPress(event)" placeholder="Hỏi AI về game, tạo admin, BXH..." 
+                       class="flex-1 bg-slate-900 border border-slate-700 text-xs text-slate-200 rounded-xl px-3 py-2 focus:outline-none focus:border-red-500">
+                <button onclick="sendChatMessage()" class="bg-red-600 hover:bg-red-500 text-white px-3 py-2 rounded-xl text-xs font-bold transition-colors">
+                    <i class="fa-solid fa-paper-plane"></i>
+                </button>
+            </div>
+        </div>
+        <button onclick="toggleChat()" class="bg-gradient-to-r from-red-600 to-indigo-600 hover:scale-105 text-white p-3.5 rounded-full shadow-xl flex items-center justify-center space-x-2 transition-transform border border-white/20">
+            <i class="fa-solid fa-robot text-lg"></i>
+            <span class="text-xs font-bold pr-1 hidden sm:inline">Trợ lý AI</span>
+        </button>
+    </div>
+
+    <!-- JAVASCRIPT SYSTEM ENGINE -->
+    <script>
+        // Store Keys
+        const DB_KEY = 'vsclox_db_v5';
+
+        // Default Games Data (Đã chuyển The Mysterious Portal lên vị trí số 1 & thêm cờ featured)
+        const DEFAULT_GAMES = [
+            {
+                id: "mysterious-portal",
+                title: "The Mysterious Portal",
+                creator: "An_Dev",
+                icon: "🌀",
+                bgGradient: "from-violet-600 via-purple-950 to-slate-950",
+                desc: "Khám phá các cánh cổng kỳ bí, chiến đấu quái vật, gặp gỡ thương nhân và nâng cấp sức mạnh nhân vật.",
+                path: "portal.html",
+                likes: 350,
+                dislikes: 4,
+                featured: true,
+                userVotes: {},
+                comments: [
+                    { author: "An_Dev", rating: 5, text: "Đã cập nhật phiên bản Enhanced Edition cực đỉnh!", date: "2026-08-15 10:30" }
+                ]
+            },
+            {
+                id: "sols-rng",
+                title: "Sol's RNG Simulation",
+                creator: "An_Dev",
+                icon: "✨",
+                bgGradient: "from-purple-600 via-indigo-950 to-slate-950",
+                desc: "Hệ thống roll Aura may rủi cực mạnh. Tích hợp bùa lợi và chế tạo thuốc.",
+                path: "rng.html",
+                likes: 380,
+                dislikes: 8,
+                userVotes: {},
+                comments: [
+                    { author: "An_Dev", rating: 5, text: "Công thức luck đã tối ưu hóa!", date: "2026-08-08 11:00" }
+                ]
+            },
+            {
+                id: "rivals",
+                title: "Rivals FPS",
+                creator: "An_Dev",
+                icon: "🎯",
+                bgGradient: "from-red-600 via-red-950 to-slate-950",
+                desc: "Trận chiến đối kháng kịch tính. Đo độ chính xác và phản xạ của bạn.",
+                path: "rivals.html",
+                likes: 142,
+                dislikes: 6,
+                userVotes: {},
+                comments: [
+                    { author: "Player1", rating: 5, text: "Game bắn súng mượt quá!", date: "2026-08-08 10:30" }
+                ]
+            },
+            {
+                id: "pet-sim-x",
+                title: "Pet Simulator X",
+                creator: "An_Dev",
+                icon: "🐱",
+                bgGradient: "from-blue-500 via-cyan-950 to-slate-950",
+                desc: "Thu thập tiền xu, mua trứng và mở khóa những chú thú cưng siêu hiếm.",
+                path: "psx.html",
+                likes: 215,
+                dislikes: 12,
+                userVotes: {},
+                comments: []
+            }
+        ];
+
+        function loadDB() {
+            const data = localStorage.getItem(DB_KEY);
+            if (!data) {
+                const initial = {
+                    users: [
+                        { username: "Player1", password: "123", role: "user", coins: 1500, gems: 120, favorites: ["mysterious-portal"] },
+                        { username: "GamerPro", password: "123", role: "user", coins: 8500, gems: 450, favorites: ["rivals"] }
+                    ],
+                    currentUser: null,
+                    games: DEFAULT_GAMES,
+                    trash: [],
+                    announcement: "🔥 KHÁM PHÁ NGAY: The Mysterious Portal - Siêu phẩm game nhập vai cánh cổng kỳ bí đã chính thức nâng cấp!",
+                    chatHistory: [
+                        { sender: 'ai', text: 'Xin chào! Mình là VSClox AI. Bạn đã thử chơi siêu phẩm The Mysterious Portal chưa?' }
+                    ]
+                };
+                localStorage.setItem(DB_KEY, JSON.stringify(initial));
+                return initial;
+            }
+            return JSON.parse(data);
+        }
+
+        function saveDB(db) {
+            localStorage.setItem(DB_KEY, JSON.stringify(db));
+        }
+
+        let db = loadDB();
+        let currentFilter = 'all'; // 'all' or 'favorites'
+        let activeAdminTab = 'addGame';
+
+        // LỆNH TẠO ADMIN BẰNG TERMINAL / CONSOLE
+        window.VSCloxAdmin = {
+            createAdmin: function(username, password) {
+                if (!username || !password) {
+                    console.error("❌ Cú pháp sai! Ví dụ: VSCloxAdmin.createAdmin('An_Dev', '123456')");
+                    return;
+                }
+                let userIndex = db.users.findIndex(u => u.username.toLowerCase() === username.toLowerCase());
+                if (userIndex !== -1) {
+                    db.users[userIndex].role = 'admin';
+                    db.users[userIndex].password = password;
+                    console.log(`%c✅ Đã nâng cấp tài khoản '${username}' thành ADMIN thành công!`, 'color: #10b981; font-weight: bold;');
+                } else {
+                    db.users.push({
+                        username: username,
+                        password: password,
+                        role: 'admin',
+                        coins: 999999,
+                        gems: 50000,
+                        favorites: []
+                    });
+                    console.log(`%c✅ Đã tạo mới tài khoản ADMIN '${username}' thành công!`, 'color: #10b981; font-weight: bold;');
+                }
+                saveDB(db);
+                render();
+            }
+        };
+
+        // RENDER ENGINE
+        function render() {
+            const app = document.getElementById('app');
+            const chatbotWidget = document.getElementById('aiChatbotWidget');
+
+            if (!db.currentUser) {
+                chatbotWidget.classList.add('hidden');
+                app.innerHTML = renderAuthScreen();
+                return;
+            }
+
+            chatbotWidget.classList.remove('hidden');
+            const user = db.users.find(u => u.username === db.currentUser) || { username: db.currentUser, coins: 0, gems: 0, role: 'user', favorites: [] };
+
+            app.innerHTML = `
+                <!-- NAVBAR -->
+                <header class="bg-slate-900 border-b border-slate-800 px-6 py-3 flex items-center justify-between sticky top-0 z-30">
+                    <div class="flex items-center space-x-3 cursor-pointer" onclick="currentFilter='all'; render();">
+                        <div class="bg-red-600 text-white px-2.5 py-1 rounded-lg font-black text-xl tracking-wider uppercase shadow-md shadow-red-600/30">
+                            VSC
+                        </div>
+                        <span class="text-xl font-extrabold tracking-tight text-white">LOX <span class="text-xs text-slate-400 font-normal">v4.0</span></span>
+                    </div>
+
+                    <!-- Search -->
+                    <div class="flex-1 max-w-md mx-6 hidden md:block">
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+                                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                            </span>
+                            <input type="text" id="searchInput" oninput="filterGames()" placeholder="Tìm kiếm trò chơi..." 
+                                   class="w-full bg-slate-800 text-xs text-slate-200 pl-9 pr-4 py-2 rounded-full border border-slate-700 focus:outline-none focus:border-red-500">
+                        </div>
+                    </div>
+
+                    <!-- Wallet & Admin Panel -->
+                    <div class="flex items-center space-x-4">
+                        <div class="flex items-center space-x-2 bg-slate-950 px-3 py-1.5 rounded-full border border-slate-800 text-xs">
+                            <span class="text-amber-400 font-bold"><i class="fa-solid fa-coins mr-1"></i>${(user.coins || 0).toLocaleString()}</span>
+                            <span class="text-slate-600">|</span>
+                            <span class="text-cyan-400 font-bold"><i class="fa-solid fa-gem mr-1"></i>${(user.gems || 0).toLocaleString()}</span>
+                        </div>
+
+                        ${user.role === 'admin' ? `
+                            <button onclick="openAdminModal()" class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-slate-950 font-black text-xs px-3 py-1.5 rounded-lg flex items-center space-x-1 shadow-lg transition-all">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span>ADMIN PANEL</span>
+                            </button>
+                        ` : ''}
+
+                        <div class="flex items-center space-x-2 border-l border-slate-800 pl-4">
+                            <div class="text-right hidden sm:block">
+                                <p class="text-xs font-bold text-slate-200">${user.username}</p>
+                                <span class="text-[10px] uppercase font-bold ${user.role === 'admin' ? 'text-amber-400' : 'text-slate-400'}">${user.role}</span>
+                            </div>
+                            <button onclick="logout()" title="Đăng xuất" class="w-8 h-8 rounded-lg bg-slate-800 hover:bg-red-600/20 hover:text-red-400 text-slate-400 flex items-center justify-center transition-colors">
+                                <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- ANNOUNCEMENT BANNER -->
+                ${db.announcement ? `
+                    <div class="bg-gradient-to-r from-purple-950 via-slate-900 to-indigo-950 border-b border-purple-800/40 px-4 py-2 text-xs flex items-center justify-between text-purple-200">
+                        <div class="flex items-center space-x-2 overflow-hidden">
+                            <span class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white px-2 py-0.5 rounded text-[10px] font-bold uppercase animate-pulse">THÔNG BÁO</span>
+                            <marquee class="font-medium">${db.announcement}</marquee>
+                        </div>
+                    </div>
+                ` : ''}
+
+                <!-- MAIN LAYOUT -->
+                <div class="flex flex-1">
+                    <!-- SIDEBAR -->
+                    <aside class="w-60 bg-slate-900/40 border-r border-slate-800 p-4 hidden lg:block">
+                        <nav class="space-y-1 text-xs font-medium">
+                            <a href="#" onclick="currentFilter='all'; render();" class="flex items-center space-x-3 px-3.5 py-2.5 ${currentFilter==='all'?'bg-red-600/10 text-red-400 font-bold border border-red-600/20':'text-slate-400 hover:bg-slate-800'} rounded-xl transition-all">
+                                <i class="fa-solid fa-house text-sm"></i>
+                                <span>Trang chủ</span>
+                            </a>
+                            <a href="#" onclick="currentFilter='favorites'; render();" class="flex items-center space-x-3 px-3.5 py-2.5 ${currentFilter==='favorites'?'bg-red-600/10 text-red-400 font-bold border border-red-600/20':'text-slate-400 hover:bg-slate-800'} rounded-xl transition-all">
+                                <i class="fa-solid fa-heart text-sm text-pink-500"></i>
+                                <span>Game Yêu thích (${(user.favorites || []).length})</span>
+                            </a>
+                            <a href="#" onclick="openLeaderboard()" class="flex items-center space-x-3 px-3.5 py-2.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 rounded-xl transition-all">
+                                <i class="fa-solid fa-trophy text-sm text-amber-400"></i>
+                                <span>Bảng Xếp Hạng</span>
+                            </a>
+                            <a href="#" onclick="openCodeModal()" class="flex items-center space-x-3 px-3.5 py-2.5 text-slate-400 hover:bg-slate-800 hover:text-slate-200 rounded-xl transition-all">
+                                <i class="fa-solid fa-gift text-sm text-emerald-400"></i>
+                                <span>Nhập mã GiftCode</span>
+                            </a>
+                        </nav>
+                    </aside>
+
+                    <!-- CONTENT -->
+                    <main class="flex-1 p-6 md:p-8">
+                        <div class="bg-gradient-to-r from-slate-900 via-slate-900 to-indigo-950 border border-slate-800 rounded-2xl p-6 mb-8 relative overflow-hidden">
+                            <h1 class="text-2xl font-black text-white mb-1">Chào mừng, ${user.username}! 👋</h1>
+                            <p class="text-xs text-slate-400">Trải nghiệm các tựa game tuyệt vời trực tiếp trên Visual Studio Code.</p>
+                        </div>
+
+                        <!-- FEATURED GAME SPOTLIGHT BANNER: THE MYSTERIOUS PORTAL -->
+                        ${currentFilter === 'all' ? `
+                            <div class="relative bg-gradient-to-r from-violet-900 via-purple-900 to-slate-950 border-2 border-violet-500/60 rounded-3xl p-6 md:p-8 mb-8 overflow-hidden shadow-2xl shadow-purple-950/50 group">
+                                <div class="absolute -right-6 -bottom-8 text-[170px] opacity-15 select-none pointer-events-none group-hover:scale-110 transition-transform duration-700">🌀</div>
+                                <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+                                    <div class="flex items-center space-x-5">
+                                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-violet-600/30 border border-violet-400/50 flex items-center justify-center text-5xl md:text-6xl shadow-inner backdrop-blur portal-glow">
+                                            🌀
+                                        </div>
+                                        <div>
+                                            <div class="flex items-center space-x-2 mb-1.5">
+                                                <span class="bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
+                                                    <i class="fa-solid fa-fire mr-1"></i>GAME NỔI BẬT OF THE MONTH
+                                                </span>
+                                                <span class="text-xs text-violet-300 font-bold bg-violet-950/80 px-2 py-0.5 rounded-md border border-violet-500/30">Enhanced Edition</span>
+                                            </div>
+                                            <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight">The Mysterious Portal</h2>
+                                            <p class="text-xs text-slate-300 mt-1.5 max-w-xl leading-relaxed">
+                                                Khám phá các cánh cổng kỳ bí, chiến đấu quái vật, gặp gỡ thương nhân và nâng cấp sức mạnh nhân vật. Trải nghiệm ngay hành trình chinh phục không gian kỳ diệu!
+                                            </p>
+                                            <div class="flex items-center space-x-4 mt-3 text-xs text-slate-400">
+                                                <span><i class="fa-solid fa-user-pen text-amber-400 mr-1"></i>Tác giả: <strong class="text-slate-200">An_Dev</strong></span>
+                                                <span><i class="fa-solid fa-thumbs-up text-emerald-400 mr-1"></i>98% Đánh giá tốt</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="flex flex-row md:flex-col gap-2.5 w-full md:w-auto">
+                                        <a href="portal.html" target="_blank" class="flex-1 md:flex-initial bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white font-extrabold px-6 py-3 rounded-2xl flex items-center justify-center space-x-2 text-xs shadow-lg shadow-violet-900/50 transition-all hover:scale-105">
+                                            <i class="fa-solid fa-play"></i>
+                                            <span>Chơi Ngay</span>
+                                        </a>
+                                        <button onclick="openGameDetail('mysterious-portal')" class="bg-slate-900/80 hover:bg-slate-800 border border-violet-500/40 text-slate-200 font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors backdrop-blur">
+                                            <i class="fa-solid fa-circle-info mr-1"></i> Chi tiết game
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        ` : ''}
+
+                        <div class="flex items-center justify-between mb-6">
+                            <h2 class="text-lg font-bold flex items-center text-white">
+                                <i class="fa-solid fa-gamepad text-red-500 mr-2"></i> 
+                                ${currentFilter === 'favorites' ? 'Danh sách Game Yêu thích' : 'Tất cả Trò chơi'}
+                            </h2>
+                            <span class="text-xs text-slate-500" id="gameCount">Đang hiển thị</span>
+                        </div>
+
+                        <div id="gameGrid" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+                            ${renderGameCards()}
+                        </div>
+                    </main>
+                </div>
+            `;
+            renderChatMessages();
+        }
+
+        // AUTH SCREEN
+        let authTab = 'login';
+        function renderAuthScreen() {
+            return `
+                <div class="min-h-screen bg-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+                    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl relative z-10 glass">
+                        <div class="text-center mb-8">
+                            <div class="inline-block bg-red-600 text-white px-3 py-1.5 rounded-xl font-black text-2xl tracking-wider uppercase mb-2 shadow-lg shadow-red-600/30">
+                                VSC LOX
+                            </div>
+                            <p class="text-xs text-slate-400">Nền tảng Game Hub trên VS Code</p>
+                        </div>
+
+                        <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 mb-6 text-xs font-bold">
+                            <button onclick="authTab='login'; render();" class="flex-1 py-2.5 rounded-lg transition-all ${authTab === 'login' ? 'bg-red-600 text-white shadow' : 'text-slate-400'}">
+                                Đăng nhập
+                            </button>
+                            <button onclick="authTab='register'; render();" class="flex-1 py-2.5 rounded-lg transition-all ${authTab === 'register' ? 'bg-red-600 text-white shadow' : 'text-slate-400'}">
+                                Đăng ký
+                            </button>
+                        </div>
+
+                        <form onsubmit="handleAuthSubmit(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 mb-1.5">Tên tài khoản</label>
+                                <input type="text" id="authUsername" required placeholder="Nhập tên tài khoản..." 
+                                       class="w-full bg-slate-950 border border-slate-800 text-xs text-white rounded-xl px-4 py-3 focus:outline-none focus:border-red-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-300 mb-1.5">Mật khẩu</label>
+                                <input type="password" id="authPassword" required placeholder="Nhập mật khẩu..." 
+                                       class="w-full bg-slate-950 border border-slate-800 text-xs text-white rounded-xl px-4 py-3 focus:outline-none focus:border-red-500">
+                            </div>
+
+                            <div id="authError" class="text-xs text-red-400 font-bold hidden"></div>
+
+                            <button type="submit" class="w-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs py-3 rounded-xl transition-all shadow-lg shadow-red-600/30">
+                                ${authTab === 'login' ? 'ĐĂNG NHẬP' : 'TẠO TÀI KHOẢN'}
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            `;
+        }
+
+        function handleAuthSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('authUsername').value.trim();
+            const password = document.getElementById('authPassword').value.trim();
+            const errDiv = document.getElementById('authError');
+
+            if (authTab === 'login') {
+                const user = db.users.find(u => u.username === username && u.password === password);
+                if (user) {
+                    db.currentUser = user.username;
+                    saveDB(db);
+                    render();
+                } else {
+                    errDiv.innerText = "Sai tên tài khoản hoặc mật khẩu!";
+                    errDiv.classList.remove('hidden');
+                }
+            } else {
+                const exists = db.users.find(u => u.username.toLowerCase() === username.toLowerCase());
+                if (exists) {
+                    errDiv.innerText = "Tài khoản đã tồn tại!";
+                    errDiv.classList.remove('hidden');
+                    return;
+                }
+                const newUser = { username, password, role: 'user', coins: 500, gems: 50, favorites: [] };
+                db.users.push(newUser);
+                db.currentUser = newUser.username;
+                saveDB(db);
+                render();
+            }
+        }
+
+        function logout() {
+            db.currentUser = null;
+            saveDB(db);
+            render();
+        }
+
+        // RENDER GAME CARDS (Thêm viền phát sáng & Tag Nổi bật cho The Mysterious Portal)
+        function renderGameCards() {
+            const currentUserObj = db.users.find(u => u.username === db.currentUser) || { favorites: [] };
+            const isAdmin = currentUserObj.role === 'admin';
+
+            let displayGames = db.games;
+            if (currentFilter === 'favorites') {
+                displayGames = db.games.filter(g => currentUserObj.favorites?.includes(g.id));
+            }
+
+            if (displayGames.length === 0) {
+                return `
+                    <div class="col-span-full text-center py-12 bg-slate-900/50 rounded-2xl border border-dashed border-slate-800">
+                        <i class="fa-regular fa-folder-open text-4xl text-slate-600 mb-3"></i>
+                        <p class="text-xs text-slate-400">Không tìm thấy trò chơi nào phù hợp.</p>
+                    </div>
+                `;
+            }
+
+            return displayGames.map(game => {
+                const isFav = currentUserObj.favorites?.includes(game.id);
+                const totalVotes = (game.likes || 0) + (game.dislikes || 0);
+                const ratingPct = totalVotes > 0 ? Math.round((game.likes / totalVotes) * 100) : 100;
+                const isFeaturedGame = game.id === 'mysterious-portal' || game.featured;
+
+                return `
+                    <div class="bg-slate-900 rounded-2xl border ${isFeaturedGame ? 'border-violet-500 ring-2 ring-violet-500/60 shadow-xl shadow-purple-950/40' : 'border-slate-800 hover:border-slate-700'} overflow-hidden transition-all flex flex-col group relative">
+                        ${isFeaturedGame ? `
+                            <div class="absolute top-2 right-2 z-20 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black text-[9px] px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 uppercase tracking-wider">
+                                <i class="fa-solid fa-star text-amber-300"></i> NỔI BẬT
+                            </div>
+                        ` : ''}
+
+                        <div class="h-36 bg-gradient-to-br ${game.bgGradient} p-4 flex items-center justify-center relative cursor-pointer" onclick="openGameDetail('${game.id}')">
+                            <span class="text-6xl group-hover:scale-110 transition-transform duration-300 z-10 ${isFeaturedGame ? 'portal-glow' : ''}">${game.icon}</span>
+                            
+                            <!-- Favorite Heart Button -->
+                            <button onclick="event.stopPropagation(); toggleFavorite('${game.id}')" 
+                                    class="absolute top-3 left-3 z-20 w-8 h-8 rounded-xl bg-slate-950/60 backdrop-blur text-pink-500 hover:scale-110 flex items-center justify-center transition-all">
+                                <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
+                            </button>
+
+                            ${isAdmin ? `
+                                <button onclick="event.stopPropagation(); moveToTrash('${game.id}')" title="Chuyển vào Thùng rác" 
+                                        class="absolute bottom-3 right-3 z-20 bg-red-600/80 hover:bg-red-600 text-white w-8 h-8 rounded-xl text-xs flex items-center justify-center backdrop-blur shadow">
+                                    <i class="fa-solid fa-trash-can"></i>
+                                </button>
+                            ` : ''}
+                        </div>
+
+                        <div class="p-5 flex-1 flex flex-col justify-between">
+                            <div>
+                                <div class="flex items-start justify-between mb-1">
+                                    <h3 onclick="openGameDetail('${game.id}')" class="font-bold text-sm text-white hover:text-purple-400 cursor-pointer transition-colors flex items-center">
+                                        ${game.title}
+                                    </h3>
+                                    <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-emerald-400 font-bold">${ratingPct}% 👍</span>
+                                </div>
+                                <p class="text-[10px] text-slate-500 mb-2">Bởi ${game.creator}</p>
+                                <p class="text-xs text-slate-400 line-clamp-2">${game.desc}</p>
+                            </div>
+
+                            <div class="mt-4 flex gap-2">
+                                <a href="${game.path}" target="_blank" 
+                                   class="flex-1 ${isFeaturedGame ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500' : 'bg-emerald-600 hover:bg-emerald-500'} text-white font-bold py-2 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs transition-colors shadow-lg">
+                                    <i class="fa-solid fa-play text-xs"></i>
+                                    <span>Chơi ngay</span>
+                                </a>
+                                <button onclick="openGameDetail('${game.id}')" 
+                                        class="bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold py-2 px-3 rounded-xl text-xs transition-colors">
+                                    <i class="fa-solid fa-circle-info"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // CHI TIẾT GAME
+        function openGameDetail(gameId) {
+            const game = db.games.find(g => g.id === gameId);
+            if (!game) return;
+
+            const currentUserObj = db.users.find(u => u.username === db.currentUser) || { favorites: [] };
+            const isFav = currentUserObj.favorites?.includes(game.id);
+            const userVote = game.userVotes?.[db.currentUser];
+
+            const totalVotes = (game.likes || 0) + (game.dislikes || 0);
+            const ratingPct = totalVotes > 0 ? Math.round((game.likes / totalVotes) * 100) : 100;
+
+            const modalContainer = document.getElementById('modalContainer');
+            modalContainer.innerHTML = `
+                <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[90vh]">
+                        
+                        <div class="h-44 bg-gradient-to-br ${game.bgGradient} p-6 flex items-center justify-between relative">
+                            <div class="flex items-center space-x-4 z-10">
+                                <span class="text-7xl portal-glow">${game.icon}</span>
+                                <div>
+                                    <h2 class="text-2xl font-black text-white">${game.title}</h2>
+                                    <p class="text-xs text-slate-300">Tác giả: <span class="font-bold text-amber-400">${game.creator}</span></p>
+                                    <p class="text-xs text-slate-400 mt-1"><i class="fa-solid fa-link mr-1"></i>Path: <code class="text-slate-200">${game.path}</code></p>
+                                </div>
+                            </div>
+                            <button onclick="closeModal()" class="absolute top-4 right-4 text-white/80 hover:text-white bg-black/40 w-8 h-8 rounded-full flex items-center justify-center z-20"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+
+                        <div class="bg-slate-950 p-4 border-b border-slate-800 flex items-center justify-between text-xs">
+                            <div class="flex items-center space-x-3">
+                                <button onclick="toggleLike('${game.id}', 'like')" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border ${userVote === 'like' ? 'bg-emerald-600 text-white border-emerald-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'}">
+                                    <i class="fa-solid fa-thumbs-up"></i>
+                                    <span>${game.likes || 0}</span>
+                                </button>
+                                <button onclick="toggleLike('${game.id}', 'dislike')" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl border ${userVote === 'dislike' ? 'bg-red-600 text-white border-red-500' : 'bg-slate-900 border-slate-800 text-slate-300 hover:bg-slate-800'}">
+                                    <i class="fa-solid fa-thumbs-down"></i>
+                                    <span>${game.dislikes || 0}</span>
+                                </button>
+                                <span class="text-emerald-400 font-bold bg-slate-900 px-2.5 py-1.5 rounded-xl border border-slate-800">${ratingPct}% Đánh giá tích cực</span>
+                            </div>
+
+                            <div class="flex items-center space-x-2">
+                                <button onclick="toggleFavorite('${game.id}'); openGameDetail('${game.id}');" class="px-3 py-1.5 rounded-xl border ${isFav ? 'bg-pink-600/20 text-pink-400 border-pink-500/30' : 'bg-slate-900 text-slate-400 border-slate-800'} hover:scale-105 transition-all">
+                                    <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart mr-1"></i> ${isFav ? 'Đã thích' : 'Yêu thích'}
+                                </button>
+                                <a href="${game.path}" target="_blank" class="bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-4 py-1.5 rounded-xl flex items-center space-x-1">
+                                    <i class="fa-solid fa-play"></i> <span>Chơi ngay</span>
+                                </a>
+                            </div>
+                        </div>
+
+                        <div class="p-6 overflow-y-auto space-y-6 flex-1 text-xs">
+                            <div>
+                                <h4 class="font-bold text-white text-sm mb-1">Mô tả Trò chơi</h4>
+                                <p class="text-slate-300 leading-relaxed">${game.desc}</p>
+                            </div>
+
+                            <div class="border-t border-slate-800 pt-5">
+                                <h4 class="font-bold text-white text-sm mb-4 flex items-center justify-between">
+                                    <span><i class="fa-solid fa-comments text-indigo-400 mr-2"></i>Bình luận & Đánh giá (${(game.comments || []).length})</span>
+                                </h4>
+
+                                <form onsubmit="addComment(event, '${game.id}')" class="space-y-3 mb-6 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-slate-400 font-bold">Chấm điểm sao:</span>
+                                        <select id="commentRating" class="bg-slate-900 border border-slate-800 text-amber-400 font-bold rounded-lg p-1 text-xs focus:outline-none">
+                                            <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
+                                            <option value="4">⭐⭐⭐⭐ (4/5)</option>
+                                            <option value="3">⭐⭐⭐ (3/5)</option>
+                                            <option value="2">⭐⭐ (2/5)</option>
+                                            <option value="1">⭐ (1/5)</option>
+                                        </select>
+                                    </div>
+                                    <textarea id="commentText" required rows="2" placeholder="Viết đánh giá của bạn về game này..." class="w-full bg-slate-900 border border-slate-800 text-white rounded-xl p-3 focus:outline-none focus:border-indigo-500 text-xs"></textarea>
+                                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-xl">Đăng Bình luận</button>
+                                </form>
+
+                                <div class="space-y-3">
+                                    ${(game.comments || []).length === 0 ? '<p class="text-slate-500">Chưa có bình luận nào. Hãy là người đầu tiên đánh giá!</p>' : ''}
+                                    ${(game.comments || []).map(c => `
+                                        <div class="bg-slate-950/60 p-3.5 rounded-2xl border border-slate-800/80">
+                                            <div class="flex items-center justify-between mb-1">
+                                                <span class="font-bold text-slate-200">${c.author}</span>
+                                                <span class="text-amber-400">${'⭐'.repeat(c.rating)}</span>
+                                            </div>
+                                            <p class="text-slate-300 text-xs mb-1">${c.text}</p>
+                                            <span class="text-[10px] text-slate-500">${c.date}</span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function toggleLike(gameId, type) {
+            const game = db.games.find(g => g.id === gameId);
+            if (!game) return;
+            if (!game.userVotes) game.userVotes = {};
+
+            const currentVote = game.userVotes[db.currentUser];
+            if (currentVote === type) {
+                delete game.userVotes[db.currentUser];
+                if (type === 'like') game.likes = Math.max(0, game.likes - 1);
+                else game.dislikes = Math.max(0, game.dislikes - 1);
+            } else {
+                if (currentVote === 'like') game.likes = Math.max(0, game.likes - 1);
+                if (currentVote === 'dislike') game.dislikes = Math.max(0, game.dislikes - 1);
+
+                game.userVotes[db.currentUser] = type;
+                if (type === 'like') game.likes = (game.likes || 0) + 1;
+                else game.dislikes = (game.dislikes || 0) + 1;
+            }
+
+            saveDB(db);
+            openGameDetail(gameId);
+            render();
+        }
+
+        function toggleFavorite(gameId) {
+            const user = db.users.find(u => u.username === db.currentUser);
+            if (!user) return;
+            if (!user.favorites) user.favorites = [];
+
+            const idx = user.favorites.indexOf(gameId);
+            if (idx !== -1) user.favorites.splice(idx, 1);
+            else user.favorites.push(gameId);
+
+            saveDB(db);
+            render();
+        }
+
+        function addComment(e, gameId) {
+            e.preventDefault();
+            const game = db.games.find(g => g.id === gameId);
+            if (!game) return;
+
+            const rating = parseInt(document.getElementById('commentRating').value);
+            const text = document.getElementById('commentText').value.trim();
+
+            if (!game.comments) game.comments = [];
+            game.comments.unshift({
+                author: db.currentUser,
+                rating: rating,
+                text: text,
+                date: new Date().toLocaleString('vi-VN')
+            });
+
+            saveDB(db);
+            openGameDetail(gameId);
+        }
+
+        // BẢNG XẾP HẠNG LEADERBOARD
+        function openLeaderboard() {
+            const sortedUsers = [...db.users].sort((a, b) => ((b.coins || 0) + (b.gems || 0) * 10) - ((a.coins || 0) + (a.gems || 0) * 10));
+
+            const modalContainer = document.getElementById('modalContainer');
+            modalContainer.innerHTML = `
+                <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+                        <div class="bg-slate-950 p-5 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center space-x-2 text-amber-400">
+                                <i class="fa-solid fa-trophy text-xl"></i>
+                                <h3 class="font-black text-sm text-white">BẢNG XẾP HẠNG ĐẠI GIA VSCLOX</h3>
+                            </div>
+                            <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+
+                        <div class="p-6 overflow-y-auto space-y-3 flex-1 text-xs">
+                            ${sortedUsers.map((u, index) => {
+                                let rankBadge = `#${index + 1}`;
+                                if (index === 0) rankBadge = '🥇';
+                                if (index === 1) rankBadge = '🥈';
+                                if (index === 2) rankBadge = '🥉';
+
+                                return `
+                                    <div class="bg-slate-950 p-3.5 rounded-2xl border ${u.username === db.currentUser ? 'border-amber-500/50 bg-amber-950/10' : 'border-slate-800'} flex items-center justify-between">
+                                        <div class="flex items-center space-x-3">
+                                            <span class="text-base font-black w-7 text-center">${rankBadge}</span>
+                                            <div>
+                                                <h4 class="font-bold text-white text-xs">${u.username} ${u.username === db.currentUser ? '<span class="text-[10px] text-amber-400">(Bạn)</span>' : ''}</h4>
+                                                <span class="text-[10px] uppercase font-bold text-slate-500">${u.role}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex space-x-3 text-right">
+                                            <div>
+                                                <span class="block text-amber-400 font-bold"><i class="fa-solid fa-coins mr-1"></i>${(u.coins || 0).toLocaleString()}</span>
+                                                <span class="block text-cyan-400 font-bold"><i class="fa-solid fa-gem mr-1"></i>${(u.gems || 0).toLocaleString()}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // ADMIN PANEL
+        function openAdminModal(tab = 'addGame') {
+            const user = db.users.find(u => u.username === db.currentUser);
+            if (!user || user.role !== 'admin') return;
+
+            activeAdminTab = tab;
+            const modalContainer = document.getElementById('modalContainer');
+            modalContainer.innerHTML = `
+                <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
+                        <div class="bg-slate-950 px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <i class="fa-solid fa-shield-halved text-amber-500"></i>
+                                <h3 class="font-black text-sm text-white">ADMIN DASHBOARD CONTROL</h3>
+                            </div>
+                            <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+                        </div>
+
+                        <div class="flex bg-slate-950/50 border-b border-slate-800 text-xs font-bold px-6">
+                            <button onclick="openAdminModal('addGame')" class="py-3 mr-6 border-b-2 transition-all ${activeAdminTab === 'addGame' ? 'border-amber-500 text-amber-400' : 'border-transparent text-slate-400'}">
+                                <i class="fa-solid fa-plus mr-1"></i> Thêm Game mới
+                            </button>
+                            <button onclick="openAdminModal('trashBin')" class="py-3 mr-6 border-b-2 transition-all ${activeAdminTab === 'trashBin' ? 'border-amber-500 text-amber-400' : 'border-transparent text-slate-400'}">
+                                <i class="fa-solid fa-trash-can mr-1"></i> Thùng rác (${db.trash.length})
+                            </button>
+                            <button onclick="openAdminModal('giveCoins')" class="py-3 border-b-2 transition-all ${activeAdminTab === 'giveCoins' ? 'border-amber-500 text-amber-400' : 'border-transparent text-slate-400'}">
+                                <i class="fa-solid fa-coins mr-1"></i> Cấp Tiền & Thông báo
+                            </button>
+                        </div>
+
+                        <div class="p-6 overflow-y-auto flex-1 text-xs">
+                            ${renderAdminTabContent()}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderAdminTabContent() {
+            if (activeAdminTab === 'addGame') {
+                return `
+                    <form onsubmit="handleAddNewGame(event)" class="space-y-4">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block font-bold text-slate-300 mb-1">Tên Game</label>
+                                <input type="text" id="newTitle" required placeholder="Ví dụ: Blox Fruits Remake" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                            </div>
+                            <div>
+                                <label class="block font-bold text-slate-300 mb-1">Icon Emoji</label>
+                                <input type="text" id="newIcon" required placeholder="⚔️" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-300 mb-1">Đường dẫn file (path)</label>
+                            <input type="text" id="newPath" required placeholder="mygame.html" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white">
+                        </div>
+                        <div>
+                            <label class="block font-bold text-slate-300 mb-1">Mô tả ngắn</label>
+                            <textarea id="newDesc" required rows="2" placeholder="Mô tả gameplay..." class="w-full bg-slate-950 border border-slate-800 rounded-xl p-2.5 text-white"></textarea>
+                        </div>
+                        <button type="submit" class="w-full bg-amber-500 hover:bg-amber-600 text-slate-950 font-black p-3 rounded-xl">THÊM GAME VÀO DỰ ÁN</button>
+                    </form>
+                `;
+            } else if (activeAdminTab === 'trashBin') {
+                if (db.trash.length === 0) return `<p class="text-center py-8 text-slate-500">Thùng rác trống.</p>`;
+                return `
+                    <div class="space-y-3">
+                        ${db.trash.map(g => `
+                            <div class="bg-slate-950 p-3.5 rounded-xl border border-slate-800 flex items-center justify-between">
+                                <div class="flex items-center space-x-3">
+                                    <span class="text-2xl">${g.icon}</span>
+                                    <div>
+                                        <h4 class="font-bold text-white text-xs">${g.title}</h4>
+                                        <p class="text-[10px] text-slate-500">${g.path}</p>
+                                    </div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button onclick="restoreGame('${g.id}')" class="bg-emerald-600/20 text-emerald-400 hover:bg-emerald-600 hover:text-white px-3 py-1.5 rounded-lg font-bold text-[11px]">Khôi phục</button>
+                                    <button onclick="permanentDeleteGame('${g.id}')" class="bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white px-3 py-1.5 rounded-lg font-bold text-[11px]">Xóa vĩnh viễn</button>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                `;
+            } else if (activeAdminTab === 'giveCoins') {
+                return `
+                    <div class="space-y-6">
+                        <form onsubmit="handleGiveMoney(event)" class="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <h4 class="font-bold text-amber-400">Cấp Tiền cho Người chơi</h4>
+                            <div class="grid grid-cols-3 gap-3">
+                                <select id="giveUserSelect" class="bg-slate-900 border border-slate-800 text-slate-200 rounded-xl p-2">
+                                    ${db.users.map(u => `<option value="${u.username}">${u.username}</option>`).join('')}
+                                </select>
+                                <input type="number" id="giveCoinsAmount" placeholder="+ Coins" class="bg-slate-900 border border-slate-800 text-white rounded-xl p-2">
+                                <input type="number" id="giveGemsAmount" placeholder="+ Gems" class="bg-slate-900 border border-slate-800 text-white rounded-xl p-2">
+                            </div>
+                            <button type="submit" class="w-full bg-amber-500 text-slate-950 font-bold p-2 rounded-xl">Cộng tiền</button>
+                        </form>
+
+                        <form onsubmit="handleSetAnnouncement(event)" class="space-y-3 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                            <h4 class="font-bold text-red-400">Thay đổi Thông báo Toàn Máy chủ</h4>
+                            <input type="text" id="announcementText" value="${db.announcement}" class="w-full bg-slate-900 border border-slate-800 text-white rounded-xl p-2">
+                            <button type="submit" class="w-full bg-red-600 text-white font-bold p-2 rounded-xl">Cập nhật thông báo</button>
+                        </form>
+                    </div>
+                `;
+            }
+        }
+
+        function handleAddNewGame(e) {
+            e.preventDefault();
+            const newGame = {
+                id: "game-" + Date.now(),
+                title: document.getElementById('newTitle').value.trim(),
+                creator: db.currentUser,
+                icon: document.getElementById('newIcon').value.trim(),
+                bgGradient: "from-slate-800 via-slate-900 to-black",
+                desc: document.getElementById('newDesc').value.trim(),
+                path: document.getElementById('newPath').value.trim(),
+                likes: 0,
+                dislikes: 0,
+                userVotes: {},
+                comments: []
+            };
+            db.games.push(newGame);
+            saveDB(db);
+            closeModal();
+            render();
+        }
+
+        function moveToTrash(gameId) {
+            if (!confirm("Chuyển game này vào Thùng rác?")) return;
+            const idx = db.games.findIndex(g => g.id === gameId);
+            if (idx !== -1) {
+                const [del] = db.games.splice(idx, 1);
+                db.trash.push(del);
+                saveDB(db);
+                render();
+            }
+        }
+
+        function restoreGame(gameId) {
+            const idx = db.trash.findIndex(g => g.id === gameId);
+            if (idx !== -1) {
+                const [res] = db.trash.splice(idx, 1);
+                db.games.push(res);
+                saveDB(db);
+                openAdminModal('trashBin');
+                render();
+            }
+        }
+
+        function permanentDeleteGame(gameId) {
+            if (!confirm("Xóa vĩnh viễn game này?")) return;
+            db.trash = db.trash.filter(g => g.id !== gameId);
+            saveDB(db);
+            openAdminModal('trashBin');
+            render();
+        }
+
+        function handleGiveMoney(e) {
+            e.preventDefault();
+            const username = document.getElementById('giveUserSelect').value;
+            const coins = parseInt(document.getElementById('giveCoinsAmount').value) || 0;
+            const gems = parseInt(document.getElementById('giveGemsAmount').value) || 0;
+
+            const u = db.users.find(x => x.username === username);
+            if (u) {
+                u.coins = (u.coins || 0) + coins;
+                u.gems = (u.gems || 0) + gems;
+                saveDB(db);
+                alert(`Đã cộng tiền cho ${username}!`);
+                closeModal();
+                render();
+            }
+        }
+
+        function handleSetAnnouncement(e) {
+            e.preventDefault();
+            db.announcement = document.getElementById('announcementText').value.trim();
+            saveDB(db);
+            closeModal();
+            render();
+        }
+
+        function openCodeModal() {
+            const modalContainer = document.getElementById('modalContainer');
+            modalContainer.innerHTML = `
+                <div class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+                    <div class="bg-slate-900 border border-slate-800 rounded-3xl w-full max-w-sm p-6 shadow-2xl text-center">
+                        <i class="fa-solid fa-gift text-4xl text-amber-400 mb-3"></i>
+                        <h3 class="font-bold text-white text-base mb-1">Nhập Mã GiftCode</h3>
+                        <input type="text" id="giftCodeInput" uppercase placeholder="VD: AN_DEV_2026" class="w-full bg-slate-950 border border-slate-800 text-center uppercase text-sm text-amber-400 font-bold tracking-widest rounded-xl p-3 mb-4 focus:outline-none focus:border-amber-500">
+                        <div class="flex space-x-2">
+                            <button onclick="closeModal()" class="flex-1 bg-slate-800 text-slate-300 font-bold text-xs py-2.5 rounded-xl">Đóng</button>
+                            <button onclick="redeemCode()" class="flex-1 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs py-2.5 rounded-xl">Đổi Quà</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function redeemCode() {
+            const code = document.getElementById('giftCodeInput').value.trim().toUpperCase();
+            const user = db.users.find(u => u.username === db.currentUser);
+            if (!user) return;
+
+            if (code === 'AN_DEV_2026') {
+                user.coins = (user.coins || 0) + 2000;
+                user.gems = (user.gems || 0) + 200;
+                alert("Bạn nhận được 2,000 Coins & 200 Gems!");
+            } else if (code === 'SOLS_RNG') {
+                user.gems = (user.gems || 0) + 500;
+                alert("Bạn nhận được 500 Gems!");
+            } else {
+                alert("Mã không hợp lệ!");
+                return;
+            }
+            saveDB(db);
+            closeModal();
+            render();
+        }
+
+        function closeModal() {
+            document.getElementById('modalContainer').innerHTML = '';
+        }
+
+        // CHATBOT AI
+        function toggleChat() {
+            document.getElementById('chatWindow').classList.toggle('hidden');
+        }
+
+        function handleChatKeyPress(e) {
+            if (e.key === 'Enter') sendChatMessage();
+        }
+
+        function sendChatMessage() {
+            const input = document.getElementById('chatInput');
+            const text = input.value.trim();
+            if (!text) return;
+
+            db.chatHistory.push({ sender: 'user', text });
+            input.value = '';
+            renderChatMessages();
+
+            setTimeout(() => {
+                const reply = generateAIReply(text);
+                db.chatHistory.push({ sender: 'ai', text: reply });
+                saveDB(db);
+                renderChatMessages();
+            }, 400);
+        }
+
+        function generateAIReply(query) {
+            const q = query.toLowerCase();
+            if (q.includes('admin') || q.includes('tạo admin') || q.includes('mật khẩu')) {
+                return `Để tạo hoặc nâng cấp tài khoản Admin, bạn hãy mở DevTools Console (F12) hoặc terminal và chạy lệnh:\n\nVSCloxAdmin.createAdmin('Tên_Của_Bạn', 'Mật_Khẩu')`;
+            }
+            if (q.includes('xếp hạng') || q.includes('bxh') || q.includes('đại gia')) {
+                return `Bảng Xếp Hạng dựa trên tổng số Coins & Gems của từng tài khoản. Nhấp vào mục 'Bảng Xếp Hạng' ở menu bên trái để xem ai đứng TOP nhé!`;
+            }
+            if (q.includes('yêu thích') || q.includes('like') || q.includes('đánh giá')) {
+                return `Bạn có thể bấm vào biểu tượng ❤️ ở từng game để thêm vào danh sách Yêu Thích, hoặc xem Chi Tiết Game để thả Like/Dislike và viết bình luận!`;
+            }
+            return `Mình là VSClox AI. Hãy trải nghiệm tựa game nổi bật "The Mysterious Portal" hoặc khám phá các trò chơi tuyệt vời khác như Rivals, Sol's RNG và Pet Sim X nhé!`;
+        }
+
+        function renderChatMessages() {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            container.innerHTML = db.chatHistory.map(m => `
+                <div class="flex ${m.sender === 'user' ? 'justify-end' : 'justify-start'}">
+                    <div class="max-w-[80%] rounded-2xl p-2.5 ${m.sender === 'user' ? 'bg-red-600 text-white rounded-br-none' : 'bg-slate-800 text-slate-200 border border-slate-700 rounded-bl-none'}">
+                        ${m.text}
+                    </div>
+                </div>
+            `).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function filterGames() {
+            const keyword = document.getElementById('searchInput').value.toLowerCase();
+            const grid = document.getElementById('gameGrid');
+            const filtered = db.games.filter(g => g.title.toLowerCase().includes(keyword) || g.desc.toLowerCase().includes(keyword));
+            
+            const temp = db.games;
+            db.games = filtered;
+            grid.innerHTML = renderGameCards();
+            db.games = temp;
+        }
+
+        // INITIAL LAUNCH
+        render();
+    </script>
+</body>
+</html>

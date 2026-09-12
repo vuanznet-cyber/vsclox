@@ -1,0 +1,870 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pet Simulator X - Premium Edition</title>
+
+<style>
+/* ====================================================== */
+/* BODY & CANVAS */
+/* ====================================================== */
+body {
+    margin: 0;
+    overflow: hidden;
+    background: #1a1a1a;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    user-select: none;
+}
+
+canvas {
+    display: block;
+    background: #27ae60;
+    transition: background 0.5s ease;
+}
+
+/* ====================================================== */
+/* UI CONTROLLERS */
+/* ====================================================== */
+#ui {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+.clickable {
+    pointer-events: auto;
+}
+
+/* STATS PANEL */
+#stats-panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.6);
+    padding: 12px 24px;
+    border-radius: 30px;
+    color: white;
+    font-size: 22px;
+    font-weight: bold;
+    backdrop-filter: blur(5px);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 16px rgba(0,0,0,0.3);
+    z-index: 20;
+    display: flex;
+    gap: 20px;
+}
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* MENU SIDEBAR */
+#menu-buttons {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* BUTTON MODERN STYLE */
+button {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 15px;
+    color: #fff;
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    box-shadow: 0 4px 15px rgba(52, 152, 219, 0.4);
+    transition: all 0.2s ease;
+}
+button:hover {
+    transform: translateY(-2px) scale(1.03);
+    box-shadow: 0 6px 20px rgba(52, 152, 219, 0.6);
+}
+button:active {
+    transform: translateY(1px);
+}
+.btn-danger { background: linear-gradient(135deg, #e74c3c, #c0392b); box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4); }
+.btn-success { background: linear-gradient(135deg, #2ecc71, #27ae60); box-shadow: 0 4px 15px rgba(46, 204, 113, 0.4); }
+.btn-warning { background: linear-gradient(135deg, #f1c40f, #f39c12); box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4); color: #333; }
+.btn-purple { background: linear-gradient(135deg, #9b59b6, #8e44ad); box-shadow: 0 4px 15px rgba(155, 89, 182, 0.4); }
+
+/* ====================================================== */
+/* MODERN PANELS */
+/* ====================================================== */
+.panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 440px;
+    max-height: 75vh;
+    overflow-y: auto;
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-radius: 24px;
+    padding: 25px;
+    display: none;
+    pointer-events: auto;
+    z-index: 50;
+    color: white;
+    border: 3px solid #34495e;
+    box-shadow: 0 15px 40px rgba(0,0,0,0.6);
+}
+.panel h2, .panel h1 {
+    margin-top: 0;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: linear-gradient(45deg, #ff9ff3, #feca57, #54a0ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+.close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    padding: 5px 12px;
+    border-radius: 50%;
+}
+
+/* INVENTORY GRID */
+#pet-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    margin-top: 15px;
+}
+.pet-item {
+    background: rgba(255,255,255,0.1);
+    border: 2px solid transparent;
+    border-radius: 14px;
+    padding: 12px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+.pet-item:hover {
+    background: rgba(255,255,255,0.2);
+    transform: translateY(-3px);
+}
+.equipped {
+    border-color: #2ecc71;
+    background: rgba(46, 204, 113, 0.15);
+}
+
+/* UPGRADE ITEM */
+.upgrade-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+
+/* STARTER MENU */
+#starter-menu {
+    display: block;
+    text-align: center;
+}
+.pet-choice {
+    display: inline-block;
+    margin: 15px;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+.pet-choice:hover {
+    transform: scale(1.15);
+}
+.pet-box {
+    width: 100px;
+    height: 100px;
+    border-radius: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 55px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+}
+
+/* ====================================================== */
+/* EGG SHOP BAR */
+/* ====================================================== */
+#egg-shop {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+}
+.egg-card {
+    width: 110px;
+    background: linear-gradient(135deg, #ffffff, #f1f2f6);
+    border-radius: 18px;
+    padding: 12px;
+    text-align: center;
+    border: 3px solid #3498db;
+    cursor: pointer;
+    pointer-events: auto;
+    font-weight: bold;
+    color: #2c3e50;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+.egg-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 15px 25px rgba(0,0,0,0.3);
+}
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.4); }
+</style>
+</head>
+
+<body>
+
+<canvas id="gameCanvas"></canvas>
+
+<div id="ui">
+    <!-- STATS -->
+    <div id="stats-panel">
+        <div class="stat-item">💰 <span id="money-display">0</span></div>
+        <div class="stat-item">💎 <span id="diamond-display">0</span></div>
+        <div class="stat-item" style="color: #f1c40f;">🌍 <span id="world-display">Grassland</span></div>
+    </div>
+
+    <!-- SIDEBAR MENU -->
+    <div id="menu-buttons" class="clickable">
+        <button onclick="togglePanel('inventory-panel')">🐾 Túi Đồ</button>
+        <button onclick="togglePanel('upgrade-panel')" class="btn-purple">⚡ Nâng Cấp</button>
+        <button onclick="togglePanel('world-panel')" class="btn-warning">🌍 Bản Đồ</button>
+        <button id="hoverboard-toggle-btn" onclick="toggleHoverboard()" class="btn-success" style="display:none;">🛴 Ván Bay: TẮT</button>
+    </div>
+
+    <!-- INVENTORY PANEL -->
+    <div id="inventory-panel" class="panel">
+        <button class="close-btn btn-danger" onclick="togglePanel('inventory-panel')">X</button>
+        <h2>Túi Thú Cưng</h2>
+        <p style="text-align:center; color: #bdc3c7;">Đã trang bị: <span id="equip-count" style="color:#2ecc71; font-weight:bold;">0</span> / <span id="max-slots">3</span></p>
+        <div id="pet-grid"></div>
+        <div id="pet-details" style="margin-top:20px; background: rgba(0,0,0,0.2); padding: 15px; border-radius:14px; text-align:center;">
+            <p id="detail-info">Chọn một bé Pet để xem thông tin...</p>
+            <button id="btn-equip" style="display:none; width:100%;" class="btn-success" onclick="handleEquipAction()">Trang Bị</button>
+        </div>
+    </div>
+
+    <!-- UPGRADE PANEL -->
+    <div id="upgrade-panel" class="panel">
+        <button class="close-btn btn-danger" onclick="togglePanel('upgrade-panel')">X</button>
+        <h2>Cửa Hàng Nâng Cấp</h2>
+        <div class="upgrade-item"><span>➕ Thêm 1 Ô Chứa Pet</span><button id="up-slot" onclick="buyUpgrade('slot')">1000 💎</button></div>
+        <div class="upgrade-item"><span>💰 +20% Xu Thu Hoạch</span><button id="up-coin" onclick="buyUpgrade('coin')">1000 💎</button></div>
+        <div class="upgrade-item"><span>💎 +20% Kim Cương</span><button id="up-diamond" onclick="buyUpgrade('diamond')">1000 💎</button></div>
+        <div class="upgrade-item"><span>⚡ Tốc Độ Chạy Bộ</span><button id="up-speed" onclick="buyUpgrade('speed')">1000 💎</button></div>
+        <div class="upgrade-item" style="border: 1px solid #f1c40f;"><span style="color: #f1c40f;">🛴 Mua Hoverboard độc quyền</span><button id="up-hoverboard" class="btn-warning" onclick="buyUpgrade('hoverboard')">5000 💎</button></div>
+    </div>
+
+    <!-- WORLD PANEL -->
+    <div id="world-panel" class="panel">
+        <button class="close-btn btn-danger" onclick="togglePanel('world-panel')">X</button>
+        <h2>Cổng Dịch Chuyển Worlds</h2>
+        <div class="upgrade-item">
+            <div><b>Vùng Đồng Cỏ (Grassland)</b><br><small style="color:#aaa;">Mặc định - Quái thường</small></div>
+            <button class="btn-success" onclick="switchWorld('grassland')">Đi ngay</button>
+        </div>
+        <div class="upgrade-item" style="border-left: 5px solid #e74c3c;">
+            <div><b>Đảo Núi Lửa (Volcano)</b><br><small style="color:#ff7675;" id="volcano-status">Khóa: 5,000 Xu</small></div>
+            <button id="btn-world-volcano" class="btn-warning" onclick="switchWorld('volcano')">Mở khóa</button>
+        </div>
+    </div>
+
+    <!-- STARTER MENU -->
+    <div id="starter-menu" class="panel">
+        <h1>Pet Simulator X</h1>
+        <p style="text-align:center;color:#eee;">Chọn bé linh thú đồng hành đầu tiên của bạn:</p>
+        <div class="pet-choice" onclick="selectStarter('Mèo', '#ff9ff3')">
+            <div class="pet-box" style="background: linear-gradient(135deg, #ff9ff3, #f1a2e7);">🐱</div>
+            <div style="font-weight:bold; margin-top:5px;">Mèo Con</div>
+        </div>
+        <div class="pet-choice" onclick="selectStarter('Chó', '#feca57')">
+            <div class="pet-box" style="background: linear-gradient(135deg, #feca57, #ffb142);">🐶</div>
+            <div style="font-weight:bold; margin-top:5px;">Cún Con</div>
+        </div>
+        <div class="pet-choice" onclick="selectStarter('Thỏ', '#54a0ff')">
+            <div class="pet-box" style="background: linear-gradient(135deg, #54a0ff, #341f97);">🐰</div>
+            <div style="font-weight:bold; margin-top:5px;">Thỏ Ngọc</div>
+        </div>
+    </div>
+
+    <!-- EGG SHOP HUD -->
+    <div id="egg-shop">
+        <div class="egg-card" style="border-color:#bdc3c7;" onclick="openEggModal('basic')">🥚<br>Basic<br>100 Xu</div>
+        <div class="egg-card" style="border-color:#2ecc71;" onclick="openEggModal('grass')">🌱<br>Grass<br>500 Xu</div>
+        <div class="egg-card" style="border-color:#f1c40f;" onclick="openEggModal('gold')">👑<br>Gold<br>2K Xu</div>
+        <div class="egg-card" style="border-color:#9b59b6;" onclick="openEggModal('mythic')">🌌<br>Mythic<br>10K Xu</div>
+    </div>
+
+    <!-- ROLL MODAL -->
+    <div id="roll-modal" class="panel">
+        <button class="close-btn btn-danger" onclick="closeEggModal()">X</button>
+        <h2 id="egg-title">Trứng Cơ Bản</h2>
+        <div id="rarity-info" style="background:rgba(0,0,0,0.3); padding:12px; border-radius:10px; font-size:14px; line-height:1.6;"></div>
+        <hr style="border:1px solid rgba(255,255,255,0.1); margin:15px 0;">
+        <h3>Tự động xóa (Auto Delete)</h3>
+        <div id="auto-delete-list" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;"></div>
+        <br>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+            <button class="btn-purple" onclick="toggleAutoRoll()">🔄 Bật/Tắt Tự Động Roll</button>
+            <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                <button class="btn-success" onclick="buyEgg(1)">Roll x1</button>
+                <button class="btn-warning" onclick="buyEgg(3)">Roll x3</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// ======================================================
+// SETUP & DATABASES
+// ======================================================
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+window.addEventListener('resize', () => {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+});
+
+// THẾ GIỚI & BẢN ĐỒ
+const worldData = {
+    grassland: { name: 'Grassland', color: '#27ae60', multiplier: 1, unlockCost: 0, unlocked: true },
+    volcano: { name: 'Volcano Island', color: '#7f1d1d', multiplier: 3, unlockCost: 5000, unlocked: false }
+};
+let currentWorld = 'grassland';
+
+// THÔNG TIN NGƯỜI CHƠI
+let player = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    size: 40,
+    money: 0,
+    diamonds: 0,
+    speed: 5,
+    maxEquipSlots: 3,
+    coinBuff: 1,
+    diamondBuff: 1,
+    hasHoverboard: false,
+    hoverboardEquipped: false,
+    upLevel: { slot: 0, coin: 0, diamond: 0, speed: 0, hoverboard: 0 }
+};
+
+let pets = [];
+let equippedPets = [];
+let coins = [];
+let currentEggType = '';
+let targetCoin = null;
+let selectedPetId = null;
+let autoDeletePets = [];
+let autoRoll = false;
+let autoRollInterval = null;
+
+const eggData = {
+    basic: { name:'Basic Egg', price:100, content:[
+        { name:'Mèo', chance:1/5, dmg:5, color:'#ff9ff3' },
+        { name:'Chó', chance:1/5, dmg:5, color:'#feca57' },
+        { name:'Thỏ', chance:1/5, dmg:5, color:'#54a0ff' },
+        { name:'Fox', chance:1/10, dmg:15, color:'#e67e22' }
+    ]},
+    grass: { name:'Grass Egg', price:500, content:[
+        { name:'Pig', chance:1/5, dmg:30, color:'#fd79a8' },
+        { name:'Cow', chance:1/10, dmg:60, color:'#636e72' },
+        { name:'Bull', chance:1/20, dmg:120, color:'#2d3436' }
+    ]},
+    gold: { name:'Gold Egg', price:2000, content:[
+        { name:'Lion', chance:1/10, dmg:200, color:'#f1c40f' },
+        { name:'Wolf', chance:1/15, dmg:300, color:'#95a5a6' },
+        { name:'Huge Cat', chance:1/1000, dmg:'HUGE', color:'#ffeaa7' }
+    ]},
+    mythic: { name:'Mythic Egg', price:10000, content:[
+        { name:'Shark', chance:1/10, dmg:800, color:'#2980b9' },
+        { name:'Whale', chance:1/25, dmg:2000, color:'#1abc9c' },
+        { name:'Kraken', chance:1/50, dmg:4000, color:'#8e44ad' },
+        { name:'Huge Leviathan', chance:1/1000, dmg:'HUGE', color:'#16a085' }
+    ]}
+};
+
+// ======================================================
+// INPUT CONTROLLER
+// ======================================================
+let keys = {};
+window.addEventListener('keydown', e => {
+    keys[e.key.toLowerCase()] = true;
+    if(e.key.toLowerCase() === 'q') toggleHoverboard(); // Phím tắt bật tắt ván bay nhanh
+});
+window.addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
+
+canvas.addEventListener('mousedown', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+    let found = false;
+
+    coins.forEach(coin => {
+        let dist = Math.hypot(mouseX - coin.x, mouseY - coin.y);
+        if(dist < coin.size + 20){
+            targetCoin = coin;
+            found = true;
+        }
+    });
+    if(!found) targetCoin = null;
+});
+
+// ======================================================
+// GAME MECHANICAL FUNCTIONS
+// ======================================================
+function updateUI(){
+    document.getElementById('money-display').innerText = Math.floor(player.money).toLocaleString();
+    document.getElementById('diamond-display').innerText = Math.floor(player.diamonds).toLocaleString();
+    document.getElementById('world-display').innerText = worldData[currentWorld].name;
+    
+    if(player.hasHoverboard) {
+        document.getElementById('hoverboard-toggle-btn').style.display = 'block';
+    }
+}
+
+function togglePanel(id){
+    const panel = document.getElementById(id);
+    if(panel.style.display === 'block'){
+        panel.style.display = 'none';
+    } else {
+        document.querySelectorAll('.panel').forEach(p => {
+            if(p.id !== 'starter-menu') p.style.display = 'none';
+        });
+        panel.style.display = 'block';
+        if(id === 'inventory-panel') renderInventory();
+        if(id === 'upgrade-panel') renderUpgrades();
+        if(id === 'world-panel') renderWorlds();
+    }
+}
+
+function selectStarter(name, color){
+    addPet({ name:name, dmg:5, color:color });
+    document.getElementById('starter-menu').style.display = 'none';
+    for(let i=0; i<8; i++) spawnSingleCoin();
+}
+
+function toggleHoverboard() {
+    if(!player.hasHoverboard) return;
+    player.hoverboardEquipped = !player.hoverboardEquipped;
+    const btn = document.getElementById('hoverboard-toggle-btn');
+    if(player.hoverboardEquipped) {
+        btn.innerText = "🛴 Ván Bay: BẬT";
+        btn.className = "btn-warning";
+    } else {
+        btn.innerText = "🛴 Ván Bay: TẮT";
+        btn.className = "btn-success";
+    }
+}
+
+function addPet(petObj){
+    if(petObj.dmg === 'HUGE'){
+        let max = 100;
+        pets.forEach(p => { if(typeof p.dmg === 'number' && p.dmg > max) max = p.dmg; });
+        petObj.dmg = Math.floor(max * 1.5);
+    }
+
+    let equippedCount = pets.filter(p => p.isEquipped).length;
+    let autoEquip = equippedCount < player.maxEquipSlots;
+
+    let pet = {
+        id: Date.now() + Math.random(),
+        name: petObj.name,
+        dmg: petObj.dmg,
+        color: petObj.color,
+        x: player.x, y: player.y,
+        targetX: player.x, targetY: player.y,
+        isEquipped: autoEquip,
+        lastAttack: 0
+    };
+
+    if(autoDeletePets.includes(pet.name)){
+        player.money += Math.floor(pet.dmg * 2);
+        updateUI();
+        return;
+    }
+
+    pets.push(pet);
+    equippedPets = pets.filter(p => p.isEquipped);
+    renderInventory();
+}
+
+function renderInventory(){
+    const grid = document.getElementById('pet-grid');
+    grid.innerHTML = '';
+    pets.forEach(pet => {
+        const div = document.createElement('div');
+        div.className = 'pet-item';
+        if(pet.isEquipped) div.classList.add('equipped');
+        div.innerHTML = `<span style="font-size:24px;">🐾</span><br><b>${pet.name}</b><br><small style="color:#2ecc71;">${pet.dmg} DPS</small>`;
+        div.onclick = () => selectPet(pet);
+        grid.appendChild(div);
+    });
+    document.getElementById('equip-count').innerText = pets.filter(p => p.isEquipped).length;
+    document.getElementById('max-slots').innerText = player.maxEquipSlots;
+}
+
+function selectPet(pet){
+    selectedPetId = pet.id;
+    document.getElementById('detail-info').innerHTML = `🔥 <b>${pet.name}</b><br>Sát thương: ${pet.dmg} DPS`;
+    const btn = document.getElementById('btn-equip');
+    btn.style.display = 'block';
+    btn.innerText = pet.isEquipped ? 'Tháo Bỏ' : 'Trang Bị';
+}
+
+function handleEquipAction(){
+    let pet = pets.find(p => p.id === selectedPetId);
+    if(!pet) return;
+    if(pet.isEquipped){
+        pet.isEquipped = false;
+    } else {
+        if(pets.filter(p => p.isEquipped).length >= player.maxEquipSlots){
+            alert('Túi đồ trang bị đã đạt giới hạn tối đa!');
+            return;
+        }
+        pet.isEquipped = true;
+    }
+    equippedPets = pets.filter(p => p.isEquipped);
+    renderInventory();
+    selectPet(pet);
+}
+
+// ======================================================
+// MAPS & REWARDS SYSTEM
+// ======================================================
+function spawnSingleCoin(){
+    let rand = Math.random();
+    let data;
+    let mult = worldData[currentWorld].multiplier;
+
+    if(rand < 0.01){
+        data = { t: 'Titanic Chest', hp: 10000 * mult, val: 10000 * mult, dMin: 50, dMax: 100, size: 80, color: '#2c3e50' };
+    } else if(rand < 0.15){
+        data = { t: 'Diamond Box', hp: 300 * mult, val: 0, dMin: 10 * mult, dMax: 30 * mult, size: 25, color: '#3498db' };
+    } else {
+        const normalCoins = [
+            { t: 'Xu', hp: 100 * mult, val: 20 * mult, dMin: 1, dMax: 5, size: 15, color: '#f1c40f' },
+            { t: 'Hộp', hp: 250 * mult, val: 60 * mult, dMin: 3, dMax: 10, size: 25, color: '#e67e22' },
+            { t: 'Rương', hp: 500 * mult, val: 150 * mult, dMin: 8, dMax: 20, size: 35, color: '#d35400' },
+            { t: 'Két', hp: 1000 * mult, val: 400 * mult, dMin: 15, dMax: 40, size: 45, color: '#7f8c8d' }
+        ];
+        data = normalCoins[Math.floor(Math.random() * normalCoins.length)];
+    }
+
+    coins.push({
+        ...data,
+        id: Math.random(),
+        x: Math.random() * (canvas.width - 200) + 100,
+        y: Math.random() * (canvas.height - 200) + 100
+    });
+}
+
+function handleBreak(coin){
+    player.money += coin.val * player.coinBuff;
+    let diamonds = Math.floor(Math.random() * (coin.dMax - coin.dMin + 1)) + coin.dMin;
+    player.diamonds += diamonds * player.diamondBuff;
+    updateUI();
+}
+
+function renderWorlds(){
+    const vStatus = document.getElementById('volcano-status');
+    const vBtn = document.getElementById('btn-world-volcano');
+    
+    if(worldData.volcano.unlocked) {
+        vStatus.innerText = "Đã mở khóa";
+        vStatus.style.color = "#2ecc71";
+        vBtn.innerText = "Đi ngay";
+        vBtn.className = "btn-success";
+    } else {
+        vStatus.innerText = `Yêu cầu: ${worldData.volcano.unlockCost.toLocaleString()} Xu`;
+        vBtn.innerText = "Mở khóa";
+    }
+}
+
+function switchWorld(worldKey) {
+    let world = worldData[worldKey];
+    if(!world.unlocked) {
+        if(player.money >= world.unlockCost) {
+            player.money -= world.unlockCost;
+            world.unlocked = true;
+            alert(`Chúc mừng bạn đã mở khóa thành công ${world.name}!`);
+        } else {
+            alert('Bạn không đủ Xu để mở khóa hòn đảo này!');
+            return;
+        }
+    }
+    currentWorld = worldKey;
+    canvas.style.background = world.color;
+    targetCoin = null;
+    coins = [];
+    for(let i=0; i<8; i++) spawnSingleCoin();
+    togglePanel('world-panel');
+    updateUI();
+}
+
+// ======================================================
+// UPGRADES SHOP ENGINE
+// ======================================================
+function buyUpgrade(type){
+    let level = player.upLevel[type];
+    let cost = 0;
+
+    if(type === 'slot'){
+        if(level >= 7) { alert('Đạt cấp tối đa!'); return; }
+        cost = 1000 * Math.pow(5, level);
+    } else if(type === 'coin' || type === 'diamond'){
+        if(level >= 10) { alert('Đạt cấp tối đa!'); return; }
+        cost = 1000 * Math.pow(3, level);
+    } else if(type === 'speed'){
+        if(level >= 10) { alert('Đạt cấp tối đa!'); return; }
+        cost = 1000 + level * 1000;
+    } else if(type === 'hoverboard'){
+        if(player.hasHoverboard) { alert('Bạn đã sở hữu vật phẩm này!'); return; }
+        cost = 5000;
+    }
+
+    if(player.diamonds < cost){ alert('Không đủ Kim Cương quý hiếm!'); return; }
+
+    player.diamonds -= cost;
+    player.upLevel[type]++;
+
+    if(type === 'slot') player.maxEquipSlots++;
+    if(type === 'coin') player.coinBuff += 0.2;
+    if(type === 'diamond') player.diamondBuff += 0.2;
+    if(type === 'speed') player.speed += 1.5;
+    if(type === 'hoverboard') {
+        player.hasHoverboard = true;
+        player.hoverboardEquipped = true;
+    }
+
+    renderUpgrades();
+    updateUI();
+}
+
+function renderUpgrades(){
+    document.getElementById('up-slot').innerText = player.upLevel.slot >= 7 ? 'MAX' : `${(1000 * Math.pow(5, player.upLevel.slot)).toLocaleString()} 💎`;
+    document.getElementById('up-coin').innerText = player.upLevel.coin >= 10 ? 'MAX' : `${(1000 * Math.pow(3, player.upLevel.coin)).toLocaleString()} 💎`;
+    document.getElementById('up-diamond').innerText = player.upLevel.diamond >= 10 ? 'MAX' : `${(1000 * Math.pow(3, player.upLevel.diamond)).toLocaleString()} 💎`;
+    document.getElementById('up-speed').innerText = player.upLevel.speed >= 10 ? 'MAX' : `${(1000 + player.upLevel.speed * 1000).toLocaleString()} 💎`;
+    
+    const hBtn = document.getElementById('up-hoverboard');
+    if(player.hasHoverboard) {
+        hBtn.innerText = "ĐÃ SỞ HỮU";
+        hBtn.className = "btn-danger";
+        hBtn.disabled = true;
+    }
+}
+
+// ======================================================
+// GACHA EGG SYSTEMS
+// ======================================================
+function openEggModal(type){
+    currentEggType = type;
+    const egg = eggData[type];
+    document.getElementById('roll-modal').style.display = 'block';
+    document.getElementById('egg-title').innerText = egg.name;
+    document.getElementById('rarity-info').innerHTML = egg.content.map(p => `⭐ Tỷ lệ 1/${Math.round(1/p.chance)} - <b>${p.name}</b> (${p.dmg} DPS)`).join('<br>');
+    renderAutoDelete();
+}
+
+function renderAutoDelete(){
+    const egg = eggData[currentEggType];
+    const div = document.getElementById('auto-delete-list');
+    div.innerHTML = '';
+    egg.content.forEach(pet => {
+        const checked = autoDeletePets.includes(pet.name) ? 'checked' : '';
+        div.innerHTML += `<label style="display:flex; align-items:center; gap:5px;"><input type="checkbox" ${checked} onchange="toggleAutoDelete('${pet.name}')"> Tháo ${pet.name}</label>`;
+    });
+}
+
+function toggleAutoDelete(name){
+    if(autoDeletePets.includes(name)){
+        autoDeletePets = autoDeletePets.filter(p => p !== name);
+    } else {
+        autoDeletePets.push(name);
+    }
+}
+
+function closeEggModal(){
+    document.getElementById('roll-modal').style.display = 'none';
+    autoRoll = false;
+    clearInterval(autoRollInterval);
+}
+
+function toggleAutoRoll(){
+    autoRoll = !autoRoll;
+    if(autoRoll){
+        autoRollInterval = setInterval(() => { buyEgg(1); }, 350);
+    } else {
+        clearInterval(autoRollInterval);
+    }
+}
+
+function buyEgg(amount){
+    const egg = eggData[currentEggType];
+    const total = egg.price * amount;
+    if(player.money < total){
+        autoRoll = false;
+        clearInterval(autoRollInterval);
+        return;
+    }
+    player.money -= total;
+
+    for(let i=0; i<amount; i++){
+        let max = egg.content.reduce((a,b) => a + b.chance, 0);
+        let rand = Math.random() * max;
+        let sum = 0;
+        for(let pet of egg.content){
+            sum += pet.chance;
+            if(rand <= sum){ addPet(pet); break; }
+        }
+    }
+    updateUI();
+}
+
+// ======================================================
+// RENDERING & RENDERING LOOPS
+// ======================================================
+function drawPlayer(){
+    // VẼ HOVERBOARD NẾU ĐANG SỬ DỤNG
+    if(player.hasHoverboard && player.hoverboardEquipped) {
+        ctx.fillStyle = 'rgba(241, 196, 15, 0.8)';
+        ctx.shadowBlur = 15;
+        ctx.shadowColor = '#f1c40f';
+        ctx.beginPath();
+        ctx.ellipse(player.x, player.y + 22, 28, 10, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0; // Reset bóng sáng
+    }
+
+    // NHÂN VẬT CHÍNH
+    ctx.fillStyle = '#3498db';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#2980b9';
+    ctx.fillRect(player.x - 20, player.y - 20, 40, 40);
+    ctx.strokeRect(player.x - 20, player.y - 20, 40, 40);
+}
+
+function movePlayer(){
+    let currentSpeed = player.speed;
+    // Tăng tốc khi dùng ván bay
+    if(player.hasHoverboard && player.hoverboardEquipped) {
+        currentSpeed *= 1.7;
+    }
+
+    if(keys['w'] || keys['arrowup']) player.y -= currentSpeed;
+    if(keys['s'] || keys['arrowdown']) player.y += currentSpeed;
+    if(keys['a'] || keys['arrowleft']) player.x -= currentSpeed;
+    if(keys['d'] || keys['arrowright']) player.x += currentSpeed;
+}
+
+function drawCoins(){
+    coins.forEach(coin => {
+        if(targetCoin && targetCoin.id === coin.id){
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(coin.x, coin.y, coin.size + 8, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        ctx.fillStyle = coin.color;
+        ctx.beginPath();
+        ctx.arc(coin.x, coin.y, coin.size, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = 'white';
+        ctx.font = 'bold 14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(Math.ceil(coin.hp), coin.x, coin.y - coin.size - 10);
+        ctx.font = '11px Arial';
+        ctx.fillText(coin.t, coin.x, coin.y + 4);
+    });
+}
+
+function updatePets(){
+    let now = Date.now();
+    equippedPets.forEach((pet, index) => {
+        if(targetCoin){
+            let angle = (Math.PI * 2 / equippedPets.length) * index;
+            let dist = targetCoin.size + 40;
+            pet.targetX = targetCoin.x + Math.cos(angle) * dist;
+            pet.targetY = targetCoin.y + Math.sin(angle) * dist;
+
+            if(now - pet.lastAttack >= 1000){
+                targetCoin.hp -= pet.dmg;
+                pet.lastAttack = now;
+            }
+        } else {
+            pet.targetX = player.x - 50;
+            pet.targetY = player.y + (index - 1) * 35;
+        }
+
+        pet.x += (pet.targetX - pet.x) * 0.15;
+        pet.y += (pet.targetY - pet.y) * 0.15;
+
+        ctx.save();
+        ctx.translate(pet.x, pet.y);
+        if(targetCoin) ctx.rotate(Math.atan2(targetCoin.y - pet.y, targetCoin.x - pet.x));
+        ctx.fillStyle = pet.color;
+        ctx.fillRect(-15, -15, 30, 30);
+        ctx.strokeStyle = '#333';
+        ctx.strokeRect(-15, -15, 30, 30);
+        ctx.restore();
+    });
+}
+
+function cleanupCoins(){
+    for(let i = coins.length - 1; i >= 0; i--){
+        if(coins[i].hp <= 0){
+            handleBreak(coins[i]);
+            if(targetCoin && targetCoin.id === coins[i].id) targetCoin = null;
+            coins.splice(i, 1);
+            if(coins.length < 6) spawnSingleCoin();
+        }
+    }
+}
+
+function loop(){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    movePlayer();
+    drawPlayer();
+    drawCoins();
+    updatePets();
+    cleanupCoins();
+    requestAnimationFrame(loop);
+}
+
+// KHỞI CHẠY GAME
+updateUI();
+renderUpgrades();
+loop();
+</script>
+
+</body>
+</html>

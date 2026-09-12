@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wiki Game - The Mysterious Portal</title>
+  <style>
+    :root {
+      --bg: #0f291e;
+      --card-bg: #1e293b;
+      --border: #334155;
+      --accent: #8b5cf6;
+      --text: #f8fafc;
+      --subtext: #94a3b8;
+      --common: #a1a1aa;
+      --rare: #3b82f6;
+      --epic: #a855f7;
+      --legendary: #f59e0b;
+      --mythic: #ef4444;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: system-ui, -apple-system, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; justify-content: center; }
+    .wiki-container { width: 100%; max-width: 1000px; display: flex; flex-direction: column; gap: 20px; }
+    
+    header { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; position: relative; }
+    h1 { color: var(--accent); margin-bottom: 8px; font-size: 28px; }
+    p.subtitle { color: var(--subtext); font-size: 14px; }
+    .back-btn { position: absolute; left: 20px; top: 20px; background: #3b82f6; color: white; border: none; padding: 8px 14px; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 13px; }
+
+    .nav-tabs { display: flex; gap: 8px; flex-wrap: wrap; }
+    .tab-btn { background: var(--card-bg); border: 1px solid var(--border); color: var(--text); padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+    .tab-btn:hover, .tab-btn.active { background: var(--accent); border-color: var(--accent); color: white; }
+
+    .content-panel { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 20px; display: none; }
+    .content-panel.active { display: block; }
+
+    h2 { color: var(--legendary); border-bottom: 1px dashed var(--border); padding-bottom: 8px; margin-bottom: 16px; font-size: 20px; }
+    h3 { color: var(--accent); margin: 16px 0 8px 0; font-size: 16px; }
+
+    table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 13px; }
+    th, td { border: 1px solid var(--border); padding: 10px; text-align: left; }
+    th { background: #090d16; color: var(--accent); }
+    tr:nth-child(even) { background: #162032; }
+
+    .tag { padding: 2px 6px; border-radius: 4px; font-size: 11px; font-weight: bold; display: inline-block; }
+    .tag-Phổ-thông { color: var(--common); border: 1px solid var(--common); }
+    .tag-Hiếm { color: var(--rare); border: 1px solid var(--rare); }
+    .tag-Sử-thi { color: var(--epic); border: 1px solid var(--epic); }
+    .tag-Huyền-thoại { color: var(--legendary); border: 1px solid var(--legendary); }
+    .tag-Thần-thoại { color: var(--mythic); border: 1px solid var(--mythic); }
+
+    .formula-box { background: #090d16; border-left: 4px solid var(--accent); padding: 12px; margin: 10px 0; font-family: monospace; font-size: 13px; color: #cbd5e1; }
+  </style>
+</head>
+<body>
+
+<div class="wiki-container">
+  <header>
+    <a href="portal.html" class="back-btn">⬅️ Quay lại Game</a>
+    <h1>📖 Wiki Game: The Mysterious Portal</h1>
+    <p class="subtitle">Cẩm nang tra cứu chỉ số, thẻ bài Tarot, vùng đất và cơ chế chiến đấu</p>
+  </header>
+
+  <div class="nav-tabs">
+    <button class="tab-btn active" onclick="switchTab('stats')">📊 Chỉ Số & Công Thức</button>
+    <button class="tab-btn" onclick="switchTab('tarot')">🃏 Thẻ Bài Tarot</button>
+    <button class="tab-btn" onclick="switchTab('biomes')">🗺️ Vùng Đất (Biomes)</button>
+    <button class="tab-btn" onclick="switchTab('skills')">💥 Kỹ Năng & Trang Bị</button>
+    <button class="tab-btn" onclick="switchTab('events')">🎪 Biến Cố & NPC</button>
+  </div>
+
+  <!-- TAB 1: CHỈ SỐ & CÔNG THỨC -->
+  <div id="stats" class="content-panel active">
+    <h2>📊 Hệ Thống Chỉ Số & Công Thức Chiến Đấu</h2>
+    
+    <h3>1. Chỉ Số Cơ Bản (+1 Điểm Tiềm Năng)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Chỉ số</th>
+          <th>Mặc định</th>
+          <th>Giá trị tăng mỗi điểm</th>
+          <th>Ghi chú</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>💖 Máu (HP)</td><td>100</td><td>+15 HP</td><td>Tăng cả Max HP và HP hiện tại</td></tr>
+        <tr><td>⚔️ Sát thương (DMG)</td><td>10</td><td>+2 DMG</td><td>Tăng sát thương gốc</td></tr>
+        <tr><td>💧 Năng lượng (Mana)</td><td>100</td><td>+15 Mana</td><td>Tự hồi phục +3 Mana/s</td></tr>
+        <tr><td>👟 Tốc độ (SPD)</td><td>5.0</td><td>+0.5 SPD</td><td>Quyết định lượt đánh và tỷ lệ liên kích</td></tr>
+        <tr><td>🛡️ Phòng thủ (DEF)</td><td>2</td><td>+1 DEF</td><td>Giảm sát thương nhận vào trực tiếp</td></tr>
+        <tr><td>🍀 May mắn (Luck)</td><td>1</td><td>+1 Luck</td><td>Tăng tỷ lệ rớt đồ và tỷ lệ chỉ số phụ</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2. Công Thức Chỉ Số Phụ (Combat Stats)</h3>
+    <div class="formula-box">
+      🎯 Chí Mạng (Crit Rate) = min(100%, max(0%, 5% + Luck × 2% + Tarot.crit))<br>
+      ⚡ Liên Kích (Combo Rate) = min(85%, max(0%, (5% + ⌊SPD × 2⌋) + ExtraCombo + Tarot.combo))<br>
+      💫 Choáng (Stun Rate) = min(100%, max(0%, 5% + Luck × 1% + Tarot.stun))<br>
+      🌀 Né Đòn (Dodge Rate) = min(80%, max(0%, 5% + ⌊SPD × 0.8 + Luck × 0.5⌋ + Tarot.dodge))
+    </div>
+    <p style="font-size:12px; color:var(--subtext);">*Lưu ý: Nếu Tốc độ (SPD) của bạn cao hơn Tốc độ quái vật mạnh nhất trên sân, bạn sẽ nhận thêm ExtraCombo = ⌊(SPD - MaxMonsterSPD) × 5⌋% và được quyền ra đòn trước.</p>
+  </div>
+
+  <!-- TAB 2: THẺ BÀI TAROT -->
+  <div id="tarot" class="content-panel">
+    <h2>🃏 Danh Sách 10 Lá Bài Tarot</h2>
+    <p style="font-size:13px; color:var(--subtext); margin-bottom:12px;">Xuất hiện tại NPC Pháp Sư Tarot từ Cổng thứ 10 trở đi với giá 300 Vàng. Mỗi lần chỉ được trang bị 1 lá bài.</p>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Tên Lá Bài</th>
+          <th>Độ Hiếm</th>
+          <th>Tỷ lệ xuất hiện</th>
+          <th>Hiệu Ứng Chi Tiết</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><b>The Sun</b></td><td><span class="tag tag-Sử-thi">Sử thi</span></td><td>15%</td><td>Tăng +10 cho tất cả chỉ số cơ bản (HP, DMG, Mana, SPD, DEF, Luck).</td></tr>
+        <tr><td><b>Wheel Of Fortune</b></td><td><span class="tag tag-Phổ-thông">Phổ thông</span></td><td>35%</td><td>Tăng trực tiếp +30 điểm May Mắn (Luck).</td></tr>
+        <tr><td><b>Strength</b></td><td><span class="tag tag-Phổ-thông">Phổ thông</span></td><td>35%</td><td>Tăng trực tiếp +30 điểm Sát thương (DMG).</td></tr>
+        <tr><td><b>The Emperor</b></td><td><span class="tag tag-Hiếm">Hiếm</span></td><td>25%</td><td>Tăng +10 DMG, +10 DEF và +50% Vàng nhận được từ mọi nguồn.</td></tr>
+        <tr><td><b>Justice</b></td><td><span class="tag tag-Hiếm">Hiếm</span></td><td>25%</td><td>Tăng +10 DMG, +10% Chí mạng và thay đổi Sát thương Chí mạng thành x3 (mặc định x1.8).</td></tr>
+        <tr><td><b>The Fool</b></td><td><span class="tag tag-Sử-thi">Sử thi</span></td><td>15%</td><td>Ban đầu giảm -5 tất cả chỉ số. Mỗi khi bước qua 1 cổng, tăng +1 mọi chỉ số (tối đa +30).</td></tr>
+        <tr><td><b>The Devil</b></td><td><span class="tag tag-Sử-thi">Sử thi</span></td><td>15%</td><td>Giảm -50% Máu tối đa (Max HP), nhưng tăng +50% Sát thương (DMG tổng).</td></tr>
+        <tr><td><b>Judgement</b></td><td><span class="tag tag-Huyền-thoại">Huyền thoại</span></td><td>8%</td><td>Tăng ngay +20 tất cả chỉ số. Tuy nhiên, mỗi khi diệt 1 quái vật sẽ bị giảm 1 điểm chỉ số.</td></tr>
+        <tr><td><b>Death</b></td><td><span class="tag tag-Thần-thoại">Thần thoại</span></td><td>4%</td><td>Khi nhận thẻ, Máu về 1 HP. Nếu sống sót qua cổng tiếp theo, nhận +1 Mạng dự phòng và hồi 50% HP.</td></tr>
+        <tr><td><b>The Hanged Man</b></td><td><span class="tag tag-Phổ-thông">Phổ thông</span></td><td>30%</td><td>Mất 5% HP hiện tại mỗi cổng. Khi HP < 50%, kích hoạt trạng thái nhận +30 DMG & +30 DEF.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAB 3: VÙNG ĐẤT (BIOMES) -->
+  <div id="biomes" class="content-panel">
+    <h2>🗺️ Chu Kỳ Vùng Đất (Biomes)</h2>
+    <p style="font-size:13px; color:var(--subtext); margin-bottom:12px;">Các vùng đất xoay vòng liên tục theo chu kỳ 10 cổng.</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Vùng Đất</th>
+          <th>Chu Kỳ Cổng</th>
+          <th>Đặc Điểm & Hiệu Ứng (Buff/Debuff)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>🍃 Đồng Bằng</b></td>
+          <td>Cổng 1–9, 31–39...</td>
+          <td>Sự cân bằng nguyên bản. Giảm 50% chỉ số phụ của Boss vùng này.</td>
+        </tr>
+        <tr>
+          <td><b>🏜️ Sa Mạc Khắc Nghiệt</b></td>
+          <td>Cổng 10–19, 40–49...</td>
+          <td>
+            <b>Debuff:</b> Tiêu hao Mana khi dùng kỹ năng/hành động tăng 25%.<br>
+            <b>Buff:</b> Tăng thêm +10% Vàng nhận được.<br>
+            <i>Có sự xuất hiện của Cướp Sa Mạc và Phù Thủy Azzenka.</i>
+          </td>
+        </tr>
+        <tr>
+          <td><b>🌊 Atlantis Đại Dương</b></td>
+          <td>Cổng 20–29, 50–59...</td>
+          <td>
+            <b>Debuff:</b> Giảm 50% Max Mana.<br>
+            <b>Buff:</b> Nhận ít hơn 5–15% sát thương từ đòn đánh kẻ địch.<br>
+            <i>Có sự xuất hiện của Quái Piranha và Cá Mập Hung Tàn (gây trạng thái Nhiễm Máu).</i>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAB 4: KỸ NĂNG & PHẨM CẤP -->
+  <div id="skills" class="content-panel">
+    <h2>💥 Hệ Thống Kỹ Năng & Trang Bị</h2>
+    
+    <h3>1. Kỹ Năng Nhân Vật</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Tên Kỹ Năng</th>
+          <th>Mana Tiêu Hao</th>
+          <th>Hệ Số Sát Thương</th>
+          <th>Tỷ Lệ Choáng</th>
+          <th>Mô Tả</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><b>Dũng Sĩ Trảm</b></td><td>12 Mana</td><td>200% DMG</td><td>10% Choáng</td><td>Kỹ năng mặc định ban đầu.</td></tr>
+        <tr><td><b>Hỏa Cầu Cổ Đại</b></td><td>20 Mana</td><td>280% DMG</td><td>0%</td><td>Sát thương phép diện rộng dồn Dame cực nhanh.</td></tr>
+        <tr><td><b>Lôi Trảm Choáng</b></td><td>25 Mana</td><td>180% DMG</td><td>80% Choáng</td><td>Sát thương kèm khống chế cứng tỷ lệ rất cao.</td></tr>
+        <tr><td><b>Thần Kiếm Nhất Xung</b></td><td>35 Mana</td><td>350% DMG</td><td>30% Choáng</td><td>Tuyệt kỹ sát thương đơn thể siêu mạnh.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>2. Hệ Thống Phẩm Cấp Trang Bị (Rarities)</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Phẩm Cấp</th>
+          <th>Màu Hiển Thị</th>
+          <th>Hệ Số Chỉ Số (Mult)</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Phổ thông</td><td><span class="tag tag-Phổ-thông">Xám</span></td><td>x1.0</td></tr>
+        <tr><td>Hiếm</td><td><span class="tag tag-Hiếm">Xanh Dương</span></td><td>x1.5</td></tr>
+        <tr><td>Sử thi</td><td><span class="tag tag-Sử-thi">Tím</span></td><td>x2.2</td></tr>
+        <tr><td>Huyền thoại</td><td><span class="tag tag-Huyền-thoại">Vàng</span></td><td>x3.5</td></tr>
+        <tr><td>Thần thoại</td><td><span class="tag tag-Thần-thoại">Đỏ</span></td><td>x5.0</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TAB 5: BIẾN CỐ & NPC -->
+  <div id="events" class="content-panel">
+    <h2>🎪 Biến Cố Bí Ẩn & NPC Sự Kiện</h2>
+    
+    <table>
+      <thead>
+        <tr>
+          <th>Sự Kiện / NPC</th>
+          <th>Mô Tả & Cơ Chế Hoạt Động</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>🔮 Pháp Sư Tarot</b></td>
+          <td>Xuất hiện từ Cổng 10. Đổi 300 Vàng để rút 3 lá bài Tarot ngẫu nhiên và chọn 1 lá.</td>
+        </tr>
+        <tr>
+          <td><b>🃏 Jester (Bí Uẩn)</b></td>
+          <td>Bán trang bị hiếm, bán <b>+1 Điểm Tiềm Năng (120V)</b> và trò chơi <b>Tung Đồng Xu (Đoán Sấp/Ngửa)</b>: Thắng nhân đôi số Vàng, thua mất 50% Vàng.</td>
+        </tr>
+        <tr>
+          <td><b>🧛‍♂️ Vampire Merchant</b></td>
+          <td>Cho phép hy sinh 10-35% HP hiện tại hoặc 50% Max HP để nhận các chỉ số cộng thêm ngẫu nhiên.</td>
+        </tr>
+        <tr>
+          <td><b>🦊 Gian Thương Lanh Lợi</b></td>
+          <td>Bán Hòm Bí Mật (giá tăng theo cổng). Mở hòm ngẫu nhiên ra: Rỗng (50%), Trang bị Sử Thi/Huyền Thoại (35%), hoặc +1 Điểm Tiềm Năng (15%).</td>
+        </tr>
+        <tr>
+          <td><b>🧙‍♂️ Phù Thủy Azzenka</b></td>
+          <td>Xuất hiện tại Sa Mạc. Giá 25% Vàng: Hóa giải Debuff Mana Sa Mạc hoặc Tăng +10% Max Mana.</td>
+        </tr>
+        <tr>
+          <td><b>🩸 Trạng Thái Nhiễm Máu</b></td>
+          <td>Bị Piranha cắn: Dễ gặp Cá Mập hơn. Bị Cá Mập xé thịt: Mất 1% HP mỗi khi bước qua cổng hoàn thành.</td>
+        </tr>
+        <tr>
+          <td><b>☠️ Cơ Chế Hồi Sinh</b></td>
+          <td>Khi HP về 0, người chơi có thể dùng <b>500 Vàng</b> để hồi sinh giữ nguyên toàn bộ Stats, Gold, Items & EXP. Hoặc dùng Mạng dự phòng của thẻ <b>Death</b>.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  function switchTab(tabId) {
+    document.querySelectorAll('.content-panel').forEach(panel => panel.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    
+    document.getElementById(tabId).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+</script>
+</body>
+</html>
