@@ -21,7 +21,6 @@
             color: #fff;
         }
 
-        /* Fullscreen Game Container */
         #game-container {
             position: relative;
             width: 100vw;
@@ -59,7 +58,6 @@
             display: none !important;
         }
 
-        /* Game Title Styling */
         .game-title {
             font-size: 4rem;
             font-weight: 900;
@@ -72,7 +70,6 @@
             margin-bottom: 30px;
         }
 
-        /* Menu Button Styling */
         .menu-btn-group {
             display: flex;
             flex-direction: column;
@@ -119,7 +116,6 @@
             background: #333846;
         }
 
-        /* Selection Panels (Characters & Bosses) */
         .panel-title {
             font-size: 2.2rem;
             color: #f1f5f9;
@@ -143,7 +139,7 @@
             border: 2px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 20px;
-            width: 240px;
+            width: 250px;
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -171,9 +167,9 @@
             border-color: #444;
         }
 
-        .card-avatar {
-            width: 90px;
-            height: 90px;
+        .card-avatar-box {
+            width: 100px;
+            height: 100px;
             border-radius: 50%;
             background: #0f1117;
             display: flex;
@@ -185,7 +181,13 @@
             position: relative;
         }
 
-        .card-avatar canvas {
+        .card-avatar-box img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .card-avatar-box canvas {
             width: 100%;
             height: 100%;
         }
@@ -233,50 +235,91 @@
             font-weight: bold;
         }
 
-        /* Modal Overlay Content */
+        /* Modernized Beautiful Wiki UI */
         .modal-body {
-            background: #181a24;
+            background: rgba(20, 24, 35, 0.95);
             border: 1px solid rgba(255, 255, 255, 0.15);
-            border-radius: 12px;
-            width: 80%;
-            max-width: 850px;
-            max-height: 75vh;
+            border-radius: 16px;
+            width: 85%;
+            max-width: 900px;
+            max-height: 80vh;
             overflow-y: auto;
             padding: 30px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.8);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.8);
         }
 
-        .modal-body h2 {
-            color: #ff4b2b;
-            margin-bottom: 15px;
-            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-            padding-bottom: 8px;
-        }
-
-        .wiki-section {
+        .wiki-tabs {
+            display: flex;
+            gap: 12px;
             margin-bottom: 25px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 12px;
         }
 
-        .wiki-section h3 {
-            color: #38bdf8;
-            margin-bottom: 10px;
-            font-size: 1.2rem;
-        }
-
-        .wiki-box {
-            background: rgba(255, 255, 255, 0.03);
+        .wiki-tab-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: #94a3b8;
+            padding: 10px 20px;
             border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 12px;
-            border-left: 4px solid #ff4b2b;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
         }
 
-        .wiki-box.locked-box {
-            border-left-color: #64748b;
-            opacity: 0.6;
+        .wiki-tab-btn.active {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: #fff;
+            border-color: #ff6b8b;
         }
 
-        /* HUD overlay during gameplay */
+        .wiki-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            gap: 20px;
+            align-items: flex-start;
+        }
+
+        .wiki-card.locked-card {
+            opacity: 0.5;
+            filter: grayscale(0.8);
+        }
+
+        .wiki-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: #111;
+            flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.2);
+            overflow: hidden;
+        }
+
+        .wiki-info {
+            flex: 1;
+        }
+
+        .wiki-info h3 {
+            font-size: 1.4rem;
+            margin-bottom: 8px;
+        }
+
+        .wiki-skill-tag {
+            display: inline-block;
+            background: rgba(56, 189, 248, 0.15);
+            color: #38bdf8;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            margin-right: 6px;
+        }
+
+        /* HUD Overlay */
         #hud-layer {
             position: absolute;
             top: 0;
@@ -384,7 +427,6 @@
             font-weight: bold;
         }
 
-        /* Controls Tip */
         .controls-tip {
             font-size: 0.85rem;
             color: #94a3b8;
@@ -397,13 +439,11 @@
 <body>
 
     <div id="game-container">
-        <!-- Canvas Game World -->
         <canvas id="gameCanvas"></canvas>
 
-        <!-- HUD Layer during Gameplay -->
+        <!-- HUD Layer -->
         <div id="hud-layer" class="hidden">
             <div class="hud-top">
-                <!-- Player HP & Status -->
                 <div>
                     <div style="font-weight: bold; color: #38bdf8; margin-bottom: 4px;" id="hud-player-name">NINJA</div>
                     <div class="bar-container">
@@ -413,7 +453,6 @@
                     <div style="font-size: 0.8rem; color: #fbbf24;" id="player-extra-stat">Dash: 3/3</div>
                 </div>
 
-                <!-- Boss HP Bar -->
                 <div class="boss-hud">
                     <div style="font-weight: bold; color: #ef4444; margin-bottom: 4px; font-size: 1.2rem;" id="hud-boss-name">LORD (BOSS)</div>
                     <div class="bar-container" style="width: 100%;">
@@ -425,22 +464,21 @@
 
             <div class="hud-bottom">
                 <div class="controls-tip">
-                    <b>Di chuyển:</b> WASD / Phím Mũi Tên | <b>Lướt:</b> Q (Immune) | <b>Đánh thường:</b> Chuột Trái / Tự động | <b>Chiêu 1:</b> 1 / E | <b>Chiêu 2:</b> 2 / R
+                    <b>Di chuyển:</b> WASD | <b>Lướt/Dịch chuyển:</b> Q (Immune) | <b>Đánh thường:</b> Chuột Trái | <b>Chiêu 1:</b> 1 / E | <b>Chiêu 2:</b> 2 / R
                 </div>
 
-                <!-- Skill Cooldown Indicators -->
                 <div class="skills-hud">
-                    <div class="skill-icon" id="skill-dash-box">
+                    <div class="skill-icon">
                         <span class="key-bind">Q</span>
                         <span style="font-size: 0.75rem;">Lướt</span>
                         <div id="cd-dash" class="skill-cd-overlay hidden">0s</div>
                     </div>
-                    <div class="skill-icon" id="skill-1-box">
+                    <div class="skill-icon">
                         <span class="key-bind">1 / E</span>
                         <span style="font-size: 0.75rem;" id="skill-1-name">Chiêu 1</span>
                         <div id="cd-skill-1" class="skill-cd-overlay hidden">0s</div>
                     </div>
-                    <div class="skill-icon" id="skill-2-box">
+                    <div class="skill-icon">
                         <span class="key-bind">2 / R</span>
                         <span style="font-size: 0.75rem;" id="skill-2-name">Chiêu 2</span>
                         <div id="cd-skill-2" class="skill-cd-overlay hidden">0s</div>
@@ -462,9 +500,7 @@
         <!-- CHARACTER SELECT OVERLAY -->
         <div id="menu-char-select" class="overlay-screen hidden">
             <h2 class="panel-title">Chọn Nhân Vật</h2>
-            <div class="card-container" id="char-card-container">
-                <!-- Injected via JS -->
-            </div>
+            <div class="card-container" id="char-card-container"></div>
             <div style="display: flex; gap: 15px;">
                 <button class="btn btn-secondary" onclick="GameApp.showScreen('menu-main')">Quay Lại</button>
                 <button class="btn btn-primary" onclick="GameApp.showScreen('menu-boss-select')">Tiếp Theo (Chọn Boss)</button>
@@ -474,9 +510,7 @@
         <!-- BOSS SELECT OVERLAY -->
         <div id="menu-boss-select" class="overlay-screen hidden">
             <h2 class="panel-title">Chọn Boss Đối Kháng</h2>
-            <div class="card-container" id="boss-card-container">
-                <!-- Injected via JS -->
-            </div>
+            <div class="card-container" id="boss-card-container"></div>
             <div style="display: flex; gap: 15px;">
                 <button class="btn btn-secondary" onclick="GameApp.showScreen('menu-char-select')">Quay Lại</button>
                 <button class="btn btn-primary" onclick="GameApp.startMatch()">BẮT ĐẦU TRẬN ĐẤU</button>
@@ -486,10 +520,12 @@
         <!-- WIKI OVERLAY -->
         <div id="menu-wiki" class="overlay-screen hidden">
             <div class="modal-body">
-                <h2>WIKI GAME & THÔNG TIN STATS</h2>
-                <div class="wiki-section" id="wiki-content">
-                    <!-- Dynamically populated -->
+                <h2 style="color:#ff4b2b; margin-bottom:15px;">WIKI GAME & CHI TIẾT CHỈ SỐ</h2>
+                <div class="wiki-tabs">
+                    <button class="wiki-tab-btn active" onclick="GameApp.switchWikiTab('chars', this)">Nhân Vật</button>
+                    <button class="wiki-tab-btn" onclick="GameApp.switchWikiTab('bosses', this)">Boss</button>
                 </div>
+                <div id="wiki-tab-content"></div>
             </div>
             <button class="btn btn-secondary" style="margin-top: 20px;" onclick="GameApp.showScreen('menu-main')">Đóng</button>
         </div>
@@ -497,18 +533,15 @@
         <!-- CHANGELOGS OVERLAY -->
         <div id="menu-changelogs" class="overlay-screen hidden">
             <div class="modal-body">
-                <h2>NHẬT KÝ SỬA ĐỔI (CHANGE LOGS)</h2>
-                <div class="wiki-section">
-                    <div class="wiki-box">
-                        <h4 style="color:#ff4b2b;">Phiên bản v1.0.0 (Hiện tại)</h4>
-                        <ul style="margin-left:20px; margin-top:8px; line-height: 1.6; color:#cbd5e1;">
-                            <li>Khởi tạo game Boss Rush chính thức.</li>
-                            <li>Thêm nhân vật <b>Ninja</b>: Tốc độ cao, lướt 3 lần, chiêu chém gió & phi tiêu.</li>
-                            <li>Thêm nhân vật <b>Cowboy</b>: Bắn tầm xa, ổ đạn 6 viên, bão đạn & Giờ Đi Săn.</li>
-                            <li>Thêm nhân vật <b>Knight</b>: Máu trâu, miễn thương, Thanh Gươm Công Lý gây choáng. Mở khóa khi hạ Lord.</li>
-                            <li>Thêm Boss <b>Lord</b>: Hệ Lửa, bắn hỏa cầu, triệu hồi 5 quả cầu khổng lồ & Gầm toàn map.</li>
-                            <li>Thêm hệ thống LocalStorage tự động lưu tiến trình mở khóa nhân vật & Wiki.</li>
-                            <li>Tích hợp bộ vẽ hình Canvas tự động (Placeholder Graphics) chống lỗi tàn hình ảnh.</li>
+                <h2 style="color:#ff4b2b; margin-bottom:15px;">NHẬT KÝ SỬA ĐỔI (CHANGE LOGS)</h2>
+                <div class="wiki-card">
+                    <div>
+                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.2.0 (Mới Nhất)</h4>
+                        <ul style="margin-left:20px; line-height: 1.6; color:#cbd5e1; font-size:0.9rem;">
+                            <li><b>Knight Skill 2:</b> Thêm vùng Cảnh báo Phạm vi Chiêu (Telegraph Zone) phát sáng đỏ/vàng chiếu trực tiếp khi Knight đang vận chiêu.</li>
+                            <li><b>Ninja Dash:</b> Nâng cấp Lướt thành Dịch chuyển Tức thời (Blink) qua không gian kèm chuỗi Dư ảnh.</li>
+                            <li><b>UI & Wiki:</b> Đổi mới giao diện Wiki phân tab khoa học, thẩm mỹ cao.</li>
+                            <li><b>Avatar System:</b> Load mượt mà tệp PNG từ `bossrush/` và tự động hiển thị Placeholder chất lượng cao khi thiếu ảnh.</li>
                         </ul>
                     </div>
                 </div>
@@ -516,7 +549,7 @@
             <button class="btn btn-secondary" style="margin-top: 20px;" onclick="GameApp.showScreen('menu-main')">Đóng</button>
         </div>
 
-        <!-- GAME OVER / VICTORY OVERLAY -->
+        <!-- ENDGAME OVERLAY -->
         <div id="menu-endgame" class="overlay-screen hidden">
             <h1 class="game-title" id="endgame-title">VICTORY!</h1>
             <p id="endgame-desc" style="font-size: 1.2rem; color: #cbd5e1; margin-bottom: 25px;">Bạn đã hạ gục thành công Lord!</p>
@@ -529,10 +562,8 @@
 
     <script>
         /* ==========================================================================
-           GAME DATA & ASSET SYSTEM (IMAGE LOAD + FALLBACK CANVAS PLACEHOLDERS)
+           ASSET MANAGER & LOCAL STORAGE
            ========================================================================== */
-        
-        // Asset manager with canvas generator fallbacks
         const Assets = {
             images: {},
             loaded: {},
@@ -548,229 +579,104 @@
                 });
             },
 
-            // Render crisp canvas vector shapes if image is not loaded
-            drawPlaceholder(ctx, type, x, y, radius, color, angle = 0, extra = {}) {
+            drawPlaceholder(ctx, type, x, y, radius, color, angle = 0) {
                 ctx.save();
                 ctx.translate(x, y);
                 ctx.rotate(angle);
 
                 if (type === 'ninja') {
-                    // Ninja Placeholder: Dark Blue/Purple Circle with Headband & Blade
                     ctx.fillStyle = '#3b82f6';
-                    ctx.beginPath();
-                    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#60a5fa';
-                    ctx.stroke();
-
-                    // Headband
-                    ctx.fillStyle = '#ef4444';
-                    ctx.fillRect(-radius, -radius * 0.4, radius * 2, radius * 0.3);
-
-                    // Eyes
-                    ctx.fillStyle = '#fff';
-                    ctx.fillRect(radius * 0.2, -radius * 0.3, 6, 4);
-
-                    // Katana indicator
-                    ctx.strokeStyle = '#e2e8f0';
-                    ctx.lineWidth = 4;
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(radius + 15, 0);
-                    ctx.stroke();
-
+                    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#ef4444'; ctx.fillRect(-radius, -radius * 0.4, radius * 2, radius * 0.3);
+                    ctx.fillStyle = '#fff'; ctx.fillRect(radius * 0.2, -radius * 0.3, 6, 4);
                 } else if (type === 'cowboy') {
-                    // Cowboy Placeholder: Brown/Amber Circle with Hat & Gun
                     ctx.fillStyle = '#d97706';
-                    ctx.beginPath();
-                    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.lineWidth = 3;
-                    ctx.strokeStyle = '#f59e0b';
-                    ctx.stroke();
-
-                    // Cowboy Hat brim
+                    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#78350f';
-                    ctx.beginPath();
-                    ctx.ellipse(0, -radius * 0.3, radius * 1.3, radius * 0.5, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Gun
-                    ctx.fillStyle = '#94a3b8';
-                    ctx.fillRect(radius * 0.3, 0, radius + 10, 6);
-
+                    ctx.beginPath(); ctx.ellipse(0, -radius * 0.3, radius * 1.3, radius * 0.5, 0, 0, Math.PI * 2); ctx.fill();
                 } else if (type === 'knight') {
-                    // Knight Placeholder: Silver Shield & Armor
                     ctx.fillStyle = '#64748b';
-                    ctx.beginPath();
-                    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = '#cbd5e1';
-                    ctx.stroke();
-
-                    // Armor cross
+                    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#ef4444';
-                    ctx.fillRect(-4, -radius + 4, 8, radius * 2 - 8);
-                    ctx.fillRect(-radius + 4, -4, radius * 2 - 8, 8);
-
-                    // Sword
-                    ctx.strokeStyle = '#f8fafc';
-                    ctx.lineWidth = 6;
-                    ctx.beginPath();
-                    ctx.moveTo(0, 0);
-                    ctx.lineTo(radius + 20, 0);
-                    ctx.stroke();
-
+                    ctx.fillRect(-4, -radius + 4, 8, radius * 2 - 8); ctx.fillRect(-radius + 4, -4, radius * 2 - 8, 8);
                 } else if (type === 'lord') {
-                    // Lord Boss Placeholder: Crimson Glowing Monster with Horns
-                    ctx.shadowColor = '#f97316';
-                    ctx.shadowBlur = 15;
-
                     ctx.fillStyle = '#991b1b';
-                    ctx.beginPath();
-                    ctx.arc(0, 0, radius, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.lineWidth = 4;
-                    ctx.strokeStyle = '#ea580c';
-                    ctx.stroke();
-
-                    // Demonic eyes
+                    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#facc15';
-                    ctx.beginPath();
-                    ctx.arc(radius * 0.3, -10, 6, 0, Math.PI * 2);
-                    ctx.arc(radius * 0.3, 10, 6, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Horns
-                    ctx.fillStyle = '#7f1d1d';
-                    ctx.beginPath();
-                    ctx.moveTo(-radius * 0.3, -radius);
-                    ctx.lineTo(-radius * 0.8, -radius - 18);
-                    ctx.lineTo(0, -radius * 0.6);
-                    ctx.fill();
-
-                    ctx.beginPath();
-                    ctx.moveTo(-radius * 0.3, radius);
-                    ctx.lineTo(-radius * 0.8, radius + 18);
-                    ctx.lineTo(0, radius * 0.6);
-                    ctx.fill();
+                    ctx.beginPath(); ctx.arc(radius * 0.3, -10, 6, 0, Math.PI * 2); ctx.arc(radius * 0.3, 10, 6, 0, Math.PI * 2); ctx.fill();
                 }
-
                 ctx.restore();
             }
         };
-
         Assets.init();
 
-        /* ==========================================================================
-           LOCAL STORAGE & DATA DEFINITIONS
-           ========================================================================== */
         const Storage = {
-            KEY: 'BOSS_RUSH_DATA_V1',
-            data: {
-                unlockedKnight: false,
-                defeatedBosses: []
-            },
+            KEY: 'BOSS_RUSH_DATA_V2',
+            data: { unlockedKnight: false, defeatedBosses: [] },
             load() {
                 const saved = localStorage.getItem(this.KEY);
-                if (saved) {
-                    try { this.data = JSON.parse(saved); } catch (e) {}
-                }
+                if (saved) { try { this.data = JSON.parse(saved); } catch (e) {} }
             },
-            save() {
-                localStorage.setItem(this.KEY, JSON.stringify(this.data));
-            },
+            save() { localStorage.setItem(this.KEY, JSON.stringify(this.data)); },
             unlockKnight() {
                 this.data.unlockedKnight = true;
-                if (!this.data.defeatedBosses.includes('lord')) {
-                    this.data.defeatedBosses.push('lord');
-                }
+                if (!this.data.defeatedBosses.includes('lord')) this.data.defeatedBosses.push('lord');
                 this.save();
             }
         };
         Storage.load();
 
-        // Characters Definition
+        /* ==========================================================================
+           CHARACTER & BOSS DATA
+           ========================================================================== */
         const CHARACTERS = {
             ninja: {
-                id: 'ninja',
-                name: 'Ninja',
-                color: '#3b82f6',
-                unlocked: true,
-                desc: 'Nhanh nhẹn, lướt 3 lần liên tiếp, tấn công bằng vết chém gió và phi tiêu.',
+                id: 'ninja', name: 'Ninja', color: '#3b82f6', unlocked: true,
+                desc: 'Nhanh nhẹn, dịch chuyển tức thời 3 lần, tung chém gió & phi tiêu đuổi.',
                 stats: { hp: 100, speed: 12, damage: 15, dodge: 10, critRate: 5, critDmg: 200, range: 45 },
-                passiveName: 'Dư Ảnh',
-                passiveDesc: 'Tích trữ được 3 lần lướt. Lướt nhanh hơn và xa hơn.',
-                skill1Name: 'Chém Gió',
-                skill1Desc: 'Phóng 3 vết chém theo hướng chuột, gây 75% sát thương mỗi vết (Hồi: 5s).',
-                skill2Name: 'Phi Tiêu',
-                skill2Desc: 'Triệu hồi 5 phi tiêu tự động tìm diệt boss, gây 75% sát thương mỗi cái (Hồi: 10s).'
+                passiveName: 'Dư Ảnh', passiveDesc: 'Tích trữ được 3 lần Lướt/Dịch chuyển tức thời, tạo dư ảnh ảo.',
+                skill1Name: 'Chém Gió', skill1Desc: 'Phóng 3 vết chém bay về hướng chuột (75% sát thương, hồi 5s).',
+                skill2Name: 'Phi Tiêu', skill2Desc: 'Triệu hồi 5 phi tiêu xung quanh tự tìm diệt boss (75% sát thương/tiêu, hồi 10s).'
             },
             cowboy: {
-                id: 'cowboy',
-                name: 'Cowboy',
-                color: '#d97706',
-                unlocked: true,
-                desc: 'Xạ thủ tầm xa sử dụng Revolver 6 viên đạn, bão đạn súng hoa cải.',
+                id: 'cowboy', name: 'Cowboy', color: '#d97706', unlocked: true,
+                desc: 'Sạ thủ tầm xa dùng súng Revolver 6 viên đạn, bão đạn bán nguyệt.',
                 stats: { hp: 75, speed: 8, damage: 10, dodge: 0, critRate: 10, critDmg: 250, range: 400 },
-                passiveName: 'Revolver',
-                passiveDesc: 'Súng 6 viên đạn. Nạp đạn tự động khi hết đạn (3s) hoặc nghỉ bắn 1.5s.',
-                skill1Name: 'Bão Đạn',
-                skill1Desc: 'Bắn 6 viên đạn hình bán nguyệt, gây 125% sát thương/viên (Hồi: 10s).',
-                skill2Name: 'Giờ Đi Săn',
-                skill2Desc: 'Tăng tốc độ lên 15, +5% Chí mạng, đạn gây 125% sát thương trong 5s (Hồi: 20s).'
+                passiveName: 'Revolver', passiveDesc: 'Súng 6 viên đạn. Bắn hết nạp trong 3s, dừng bắn 1.5s tự hồi đạn.',
+                skill1Name: 'Bão Đạn', skill1Desc: 'Bắn 6 viên đạn hình bán nguyệt (125% sát thương/viên, hồi 10s).',
+                skill2Name: 'Giờ Đi Săn', skill2Desc: 'Buff 5s: Tốc độ thành 15, +5% chí mạng, đạn gây 125% sát thương và bắn nhanh hơn (hồi 20s).'
             },
             knight: {
-                id: 'knight',
-                name: 'Knight',
-                color: '#64748b',
+                id: 'knight', name: 'Knight', color: '#64748b',
                 get unlocked() { return Storage.data.unlockedKnight; },
-                desc: 'Chiến binh giáp sắt kiên cường, có khiên bất tử và kiếm khổng lồ gây choáng.',
+                desc: 'Hiệp sĩ giáp sắt, miễn thương với khiên và chém kiếm khổng lồ gây choáng.',
                 stats: { hp: 200, speed: 5, damage: 50, dodge: 0, critRate: 0, critDmg: 200, range: 60, dmgReduce: 5 },
-                passiveName: 'Vỡ Giáp',
-                passiveDesc: 'Khi HP dưới 50%, tốc độ di chuyển tăng mạnh lên 10.',
-                skill1Name: 'Khiên Vững Chắc',
-                skill1Desc: 'Miễn toàn bộ sát thương (Immune) trong 5s (Hồi: 15s).',
-                skill2Name: 'Thanh Gươm Công Lý',
-                skill2Desc: 'Vết chém siêu dài 200% sát thương, choáng boss 2s (Thời gian vận chiêu: 2s) (Hồi: 20s).'
+                passiveName: 'Vỡ Giáp', passiveDesc: 'Máu dưới 50% sẽ tăng tốc độ di chuyển lên thành 10.',
+                skill1Name: 'Khiên Vững Chắc', skill1Desc: 'Dùng khiên chặn đòn, miễn thương (Immune) trong 5s (hồi 15s).',
+                skill2Name: 'Thanh Gươm Công Lý', skill2Desc: 'Vận chiêu 2s (hiển thị vùng chém), chém 200% sát thương, choáng boss 2s (hồi 20s).'
             }
         };
 
-        // Bosses Definition
         const BOSSES = {
             lord: {
-                id: 'lord',
-                name: 'Lord',
-                color: '#ef4444',
+                id: 'lord', name: 'Lord', color: '#ef4444',
                 stats: { hp: 250, speed: 10, damage: 10, dodge: 20 },
-                passiveName: 'Điên Cuồng',
-                passiveDesc: 'Mỗi khi mất 50 máu sẽ tăng 5 Tốc độ và 5 Sát thương.',
-                skill1Desc: 'Bắn 3 quả cầu lửa liên tiếp.',
-                skill2Desc: 'Triệu hồi 5 quả cầu lửa khổng lồ bay ngẫu nhiên.',
-                skill3Desc: 'Gầm toàn màn hình gây sát thương, choáng 2.5s và đẩy lùi.'
+                passiveName: 'Điên Cuồng', passiveDesc: 'Mỗi khi mất 50 máu sẽ tăng 5 Tốc độ và 5 Sát thương.',
+                skill1Desc: 'Bắn 3 quả cầu lửa liên tiếp về phía người chơi (Hồi 2s).',
+                skill2Desc: 'Triệu hồi 5 quả cầu lửa khổng lồ giữa map bay hướng ngẫu nhiên (Hồi 7s).',
+                skill3Desc: 'Gầm toàn map gây 50% sát thương, choáng 2.5s và đẩy lùi (Hồi 10s).'
             }
         };
 
         /* ==========================================================================
-           MAIN GAME ENGINE & CONTROLLER
+           MAIN GAME ENGINE
            ========================================================================== */
         const GameApp = {
-            canvas: null,
-            ctx: null,
-            selectedCharId: 'ninja',
-            selectedBossId: 'lord',
-            isRunning: false,
-            keys: {},
-            mousePos: { x: 0, y: 0 },
-
-            // Entities & FX
-            player: null,
-            boss: null,
-            projectiles: [],
-            particles: [],
-            floatingTexts: [],
+            canvas: null, ctx: null,
+            selectedCharId: 'ninja', selectedBossId: 'lord',
+            isRunning: false, keys: {}, mousePos: { x: 0, y: 0 },
+            player: null, boss: null, projectiles: [], particles: [], floatingTexts: [],
+            currentWikiTab: 'chars',
 
             init() {
                 this.canvas = document.getElementById('gameCanvas');
@@ -787,7 +693,6 @@
                 this.renderWikiContent();
                 this.showScreen('menu-main');
 
-                // Game Loop
                 let lastTime = performance.now();
                 const loop = (now) => {
                     const dt = Math.min((now - lastTime) / 1000, 0.1);
@@ -809,19 +714,32 @@
             showScreen(screenId) {
                 document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
                 document.getElementById('hud-layer').classList.add('hidden');
-                
                 if (screenId === 'hud') {
                     document.getElementById('hud-layer').classList.remove('hidden');
                 } else {
                     document.getElementById(screenId).classList.remove('hidden');
                 }
-
                 if (screenId === 'menu-char-select') this.renderSelectionCards();
                 if (screenId === 'menu-wiki') this.renderWikiContent();
             },
 
+            renderAvatarBox(container, id, color) {
+                container.innerHTML = '';
+                if (Assets.loaded[id] && Assets.images[id]) {
+                    const img = document.createElement('img');
+                    img.src = Assets.images[id].src;
+                    container.appendChild(img);
+                } else {
+                    const cvs = document.createElement('canvas');
+                    cvs.width = 100; cvs.height = 100;
+                    container.appendChild(cvs);
+                    const cctx = cvs.getContext('2d');
+                    Assets.drawPlaceholder(cctx, id, 50, 50, 30, color);
+                }
+            },
+
             renderSelectionCards() {
-                // Characters
+                // Character cards
                 const charContainer = document.getElementById('char-card-container');
                 charContainer.innerHTML = '';
                 Object.values(CHARACTERS).forEach(c => {
@@ -830,7 +748,7 @@
                     card.className = `selection-card ${this.selectedCharId === c.id ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}`;
                     card.innerHTML = `
                         ${!isUnlocked ? '<span class="lock-badge">LOCKED</span>' : ''}
-                        <div class="card-avatar" id="avatar-canvas-${c.id}"></div>
+                        <div class="card-avatar-box" id="avatar-box-${c.id}"></div>
                         <div class="card-name" style="color:${c.color}">${c.name}</div>
                         <div class="card-desc">${c.desc}</div>
                         <div class="card-stats">
@@ -841,34 +759,20 @@
                         </div>
                     `;
                     if (isUnlocked) {
-                        card.onclick = () => {
-                            this.selectedCharId = c.id;
-                            this.renderSelectionCards();
-                        };
+                        card.onclick = () => { this.selectedCharId = c.id; this.renderSelectionCards(); };
                     }
                     charContainer.appendChild(card);
-
-                    // Draw miniature avatar on card canvas
-                    setTimeout(() => {
-                        const avatarBox = document.getElementById(`avatar-canvas-${c.id}`);
-                        if (avatarBox) {
-                            const cvs = document.createElement('canvas');
-                            cvs.width = 90; cvs.height = 90;
-                            avatarBox.appendChild(cvs);
-                            const cctx = cvs.getContext('2d');
-                            Assets.drawPlaceholder(cctx, c.id, 45, 45, 25, c.color);
-                        }
-                    }, 0);
+                    this.renderAvatarBox(document.getElementById(`avatar-box-${c.id}`), c.id, c.color);
                 });
 
-                // Bosses
+                // Boss cards
                 const bossContainer = document.getElementById('boss-card-container');
                 bossContainer.innerHTML = '';
                 Object.values(BOSSES).forEach(b => {
                     const card = document.createElement('div');
                     card.className = `selection-card ${this.selectedBossId === b.id ? 'active' : ''}`;
                     card.innerHTML = `
-                        <div class="card-avatar" id="avatar-boss-${b.id}"></div>
+                        <div class="card-avatar-box" id="avatar-boss-${b.id}"></div>
                         <div class="card-name" style="color:${b.color}">${b.name}</div>
                         <div class="card-desc">Chúa Tể Ngọn Lửa - Cuồng Bạo khi mất máu.</div>
                         <div class="card-stats">
@@ -878,54 +782,67 @@
                             <div class="card-stat-row"><span>Né Tránh:</span> <b>${b.stats.dodge}%</b></div>
                         </div>
                     `;
-                    card.onclick = () => {
-                        this.selectedBossId = b.id;
-                        this.renderSelectionCards();
-                    };
+                    card.onclick = () => { this.selectedBossId = b.id; this.renderSelectionCards(); };
                     bossContainer.appendChild(card);
-
-                    setTimeout(() => {
-                        const avatarBox = document.getElementById(`avatar-boss-${b.id}`);
-                        if (avatarBox) {
-                            const cvs = document.createElement('canvas');
-                            cvs.width = 90; cvs.height = 90;
-                            avatarBox.appendChild(cvs);
-                            const cctx = cvs.getContext('2d');
-                            Assets.drawPlaceholder(cctx, b.id, 45, 45, 25, b.color);
-                        }
-                    }, 0);
+                    this.renderAvatarBox(document.getElementById(`avatar-boss-${b.id}`), b.id, b.color);
                 });
             },
 
-            renderWikiContent() {
-                const wikiBox = document.getElementById('wiki-content');
-                let html = '<h3>NHÂN VẬT</h3>';
-                Object.values(CHARACTERS).forEach(c => {
-                    const isUnlocked = c.unlocked;
-                    html += `
-                        <div class="wiki-box ${!isUnlocked ? 'locked-box' : ''}">
-                            <h4 style="color:${c.color}">${c.name} ${!isUnlocked ? '(Chưa mở khóa)' : ''}</h4>
-                            <p style="font-size:0.9rem; margin-top:4px;"><b>Nội tại (${c.passiveName}):</b> ${c.passiveDesc}</p>
-                            <p style="font-size:0.9rem; margin-top:4px;"><b>Chiêu 1 (${c.skill1Name}):</b> ${c.skill1Desc}</p>
-                            <p style="font-size:0.9rem; margin-top:4px;"><b>Chiêu 2 (${c.skill2Name}):</b> ${c.skill2Desc}</p>
-                            ${c.id === 'knight' && !isUnlocked ? '<p style="color:#ef4444; font-size:0.85rem; margin-top:4px;"><b>Yêu cầu mở khóa:</b> Đánh bại Boss Lord.</p>' : ''}
-                        </div>
-                    `;
-                });
+            switchWikiTab(tab, btn) {
+                this.currentWikiTab = tab;
+                document.querySelectorAll('.wiki-tab-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                this.renderWikiContent();
+            },
 
-                html += '<h3 style="margin-top:20px;">BOSS</h3>';
-                Object.values(BOSSES).forEach(b => {
-                    html += `
-                        <div class="wiki-box">
-                            <h4 style="color:${b.color}">${b.name}</h4>
-                            <p style="font-size:0.9rem; margin-top:4px;"><b>Nội tại (${b.passiveName}):</b> ${b.passiveDesc}</p>
-                            <p style="font-size:0.9rem; margin-top:4px;"><b>Chiêu thức 1:</b> ${b.skill1Desc}</p>
-                            <p style="font-size:0.9rem; margin-top:4px;"><b>Chiêu thức 2:</b> ${b.skill2Desc}</p>
-                            <p style="font-size:0.9rem; margin-top:4px;"><b>Chiêu thức 3:</b> ${b.skill3Desc}</p>
-                        </div>
-                    `;
-                });
-                wikiBox.innerHTML = html;
+            renderWikiContent() {
+                const box = document.getElementById('wiki-tab-content');
+                let html = '';
+
+                if (this.currentWikiTab === 'chars') {
+                    Object.values(CHARACTERS).forEach(c => {
+                        const isUnlocked = c.unlocked;
+                        html += `
+                            <div class="wiki-card ${!isUnlocked ? 'locked-card' : ''}">
+                                <div class="wiki-avatar" id="wiki-avatar-${c.id}"></div>
+                                <div class="wiki-info">
+                                    <h3 style="color:${c.color}">${c.name} ${!isUnlocked ? '<span style="font-size:0.8rem; color:#ef4444;">(Chưa mở)</span>' : ''}</h3>
+                                    <p style="font-size:0.85rem; color:#94a3b8; margin-bottom:8px;">${c.desc}</p>
+                                    <p style="font-size:0.85rem; margin-top:4px;"><span class="wiki-skill-tag">Nội tại</span> <b>${c.passiveName}:</b> ${c.passiveDesc}</p>
+                                    <p style="font-size:0.85rem; margin-top:4px;"><span class="wiki-skill-tag">Chiêu 1</span> <b>${c.skill1Name}:</b> ${c.skill1Desc}</p>
+                                    <p style="font-size:0.85rem; margin-top:4px;"><span class="wiki-skill-tag">Chiêu 2</span> <b>${c.skill2Name}:</b> ${c.skill2Desc}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    Object.values(BOSSES).forEach(b => {
+                        html += `
+                            <div class="wiki-card">
+                                <div class="wiki-avatar" id="wiki-avatar-${b.id}"></div>
+                                <div class="wiki-info">
+                                    <h3 style="color:${b.color}">${b.name}</h3>
+                                    <p style="font-size:0.85rem; margin-top:4px;"><span class="wiki-skill-tag">Nội tại</span> <b>${b.passiveName}:</b> ${b.passiveDesc}</p>
+                                    <p style="font-size:0.85rem; margin-top:4px;"><span class="wiki-skill-tag">Chiêu 1</span> ${b.skill1Desc}</p>
+                                    <p style="font-size:0.85rem; margin-top:4px;"><span class="wiki-skill-tag">Chiêu 2</span> ${b.skill2Desc}</p>
+                                    <p style="font-size:0.85rem; margin-top:4px;"><span class="wiki-skill-tag">Chiêu 3</span> ${b.skill3Desc}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                }
+                box.innerHTML = html;
+
+                // Render avatars for wiki
+                if (this.currentWikiTab === 'chars') {
+                    Object.values(CHARACTERS).forEach(c => {
+                        this.renderAvatarBox(document.getElementById(`wiki-avatar-${c.id}`), c.id, c.color);
+                    });
+                } else {
+                    Object.values(BOSSES).forEach(b => {
+                        this.renderAvatarBox(document.getElementById(`wiki-avatar-${b.id}`), b.id, b.color);
+                    });
+                }
             },
 
             startMatch() {
@@ -936,13 +853,9 @@
                 const cData = CHARACTERS[this.selectedCharId];
                 const bData = BOSSES[this.selectedBossId];
 
-                // Create Player Entity
                 this.player = new PlayerEntity(cData, 200, this.canvas.height / 2);
-
-                // Create Boss Entity
                 this.boss = new BossEntity(bData, this.canvas.width - 250, this.canvas.height / 2);
 
-                // Setup HUD UI Text
                 document.getElementById('hud-player-name').innerText = cData.name.toUpperCase();
                 document.getElementById('hud-player-name').style.color = cData.color;
                 document.getElementById('skill-1-name').innerText = cData.skill1Name;
@@ -959,53 +872,32 @@
 
                 if (playerWon) {
                     title.innerText = "CHIẾN THẮNG!";
-                    title.style.background = "linear-gradient(45deg, #10b981, #34d399)";
-                    title.style.webkitBackgroundClip = "text";
                     desc.innerText = `Bạn đã chinh phục thành công Boss ${this.boss.data.name}!`;
-
                     if (this.boss.data.id === 'lord') {
                         Storage.unlockKnight();
-                        desc.innerText += " [ĐÃ MỞ KHÓA NHÂN VẬT KNIGHT!]";
+                        desc.innerText += " [ĐÃ MỞ KHÓA KNIGHT!]";
                     }
                 } else {
                     title.innerText = "THẤT BẠI!";
-                    title.style.background = "linear-gradient(45deg, #ef4444, #f87171)";
-                    title.style.webkitBackgroundClip = "text";
                     desc.innerText = "Bạn đã hy sinh dưới tay Boss. Hãy thử lại!";
                 }
-
                 this.showScreen('menu-endgame');
             },
 
             addFloatingText(text, x, y, color = '#fff', size = 18) {
-                this.floatingTexts.push({
-                    text, x, y, color, size,
-                    life: 1.0,
-                    vy: -40
-                });
+                this.floatingTexts.push({ text, x, y, color, size, life: 1.0, vy: -40 });
             },
 
             onKeyDown(e) {
                 this.keys[e.key.toLowerCase()] = true;
                 if (!this.isRunning || !this.player) return;
 
-                // Dash (Q)
-                if (e.key.toLowerCase() === 'q') {
-                    this.player.triggerDash();
-                }
-                // Skill 1 (1 or E)
-                if (e.key === '1' || e.key.toLowerCase() === 'e') {
-                    this.player.useSkill1();
-                }
-                // Skill 2 (2 or R)
-                if (e.key === '2' || e.key.toLowerCase() === 'r') {
-                    this.player.useSkill2();
-                }
+                if (e.key.toLowerCase() === 'q') this.player.triggerDash();
+                if (e.key === '1' || e.key.toLowerCase() === 'e') this.player.useSkill1();
+                if (e.key === '2' || e.key.toLowerCase() === 'r') this.player.useSkill2();
             },
 
-            onKeyUp(e) {
-                this.keys[e.key.toLowerCase()] = false;
-            },
+            onKeyUp(e) { this.keys[e.key.toLowerCase()] = false; },
 
             onMouseMove(e) {
                 const rect = this.canvas.getBoundingClientRect();
@@ -1014,69 +906,52 @@
             },
 
             onMouseDown() {
-                if (this.isRunning && this.player) {
-                    this.player.basicAttack();
-                }
+                if (this.isRunning && this.player) this.player.basicAttack();
             },
 
             update(dt) {
                 if (!this.player || !this.boss) return;
-
-                // Entity Updates
                 this.player.update(dt);
                 this.boss.update(dt);
 
-                // Projectiles Update
                 for (let i = this.projectiles.length - 1; i >= 0; i--) {
                     const p = this.projectiles[i];
                     p.update(dt);
-                    if (p.destroyed) {
-                        this.projectiles.splice(i, 1);
-                    }
+                    if (p.destroyed) this.projectiles.splice(i, 1);
                 }
 
-                // Particles Update
                 for (let i = this.particles.length - 1; i >= 0; i--) {
                     const pt = this.particles[i];
-                    pt.x += pt.vx * dt;
-                    pt.y += pt.vy * dt;
-                    pt.life -= dt;
+                    pt.x += pt.vx * dt; pt.y += pt.vy * dt; pt.life -= dt;
                     if (pt.life <= 0) this.particles.splice(i, 1);
                 }
 
-                // Floating Text Update
                 for (let i = this.floatingTexts.length - 1; i >= 0; i--) {
                     const ft = this.floatingTexts[i];
-                    ft.y += ft.vy * dt;
-                    ft.life -= dt;
+                    ft.y += ft.vy * dt; ft.life -= dt;
                     if (ft.life <= 0) this.floatingTexts.splice(i, 1);
                 }
 
-                // Update HUD HUD Stats
                 this.updateHUD();
             },
 
             updateHUD() {
-                // Player HP
                 const pHpPct = Math.max(0, (this.player.hp / this.player.maxHp) * 100);
                 document.getElementById('player-hp-bar').style.width = pHpPct + '%';
                 document.getElementById('player-hp-text').innerText = `${Math.ceil(this.player.hp)} / ${this.player.maxHp}`;
 
-                // Extra status
-                let extraText = `Tốc độ: ${Math.round(this.player.speed)}`;
+                let extraText = `Tốc độ: ${Math.round(this.player.speed / 28)}`;
                 if (this.player.data.id === 'ninja') {
-                    extraText += ` | Lướt tích trữ: ${this.player.dashCharges}/${this.player.maxDashCharges}`;
+                    extraText += ` | Tích Lướt: ${this.player.dashCharges}/${this.player.maxDashCharges}`;
                 } else if (this.player.data.id === 'cowboy') {
                     extraText += ` | Đạn: ${this.player.ammo}/6 ${this.player.isReloading ? '(Đang nạp...)' : ''}`;
                 }
                 document.getElementById('player-extra-stat').innerText = extraText;
 
-                // Boss HP
                 const bHpPct = Math.max(0, (this.boss.hp / this.boss.maxHp) * 100);
                 document.getElementById('boss-hp-bar').style.width = bHpPct + '%';
                 document.getElementById('boss-hp-text').innerText = `${Math.ceil(this.boss.hp)} / ${this.boss.maxHp}`;
 
-                // Cooldown Overlays
                 this.updateCDOverlay('cd-dash', this.player.dashCdTimer);
                 this.updateCDOverlay('cd-skill-1', this.player.skill1CdTimer);
                 this.updateCDOverlay('cd-skill-2', this.player.skill2CdTimer);
@@ -1098,33 +973,30 @@
                 // Grid background
                 this.ctx.strokeStyle = 'rgba(255,255,255,0.03)';
                 this.ctx.lineWidth = 1;
-                const gridSize = 60;
-                for (let x = 0; x < this.canvas.width; x += gridSize) {
+                for (let x = 0; x < this.canvas.width; x += 60) {
                     this.ctx.beginPath(); this.ctx.moveTo(x, 0); this.ctx.lineTo(x, this.canvas.height); this.ctx.stroke();
                 }
-                for (let y = 0; y < this.canvas.height; y += gridSize) {
+                for (let y = 0; y < this.canvas.height; y += 60) {
                     this.ctx.beginPath(); this.ctx.moveTo(0, y); this.ctx.lineTo(this.canvas.width, y); this.ctx.stroke();
                 }
 
-                // Render Projectiles
-                this.projectiles.forEach(p => p.draw(this.ctx));
+                // Telegraph Area for Knight Skill 2
+                if (this.player && this.player.isCastingJustice) {
+                    this.player.drawKnightTelegraph(this.ctx);
+                }
 
-                // Render Entities
+                this.projectiles.forEach(p => p.draw(this.ctx));
                 if (this.player) this.player.draw(this.ctx);
                 if (this.boss) this.boss.draw(this.ctx);
 
-                // Render Particles
                 this.particles.forEach(pt => {
                     this.ctx.save();
                     this.ctx.fillStyle = pt.color;
                     this.ctx.globalAlpha = Math.max(0, pt.life);
-                    this.ctx.beginPath();
-                    this.ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-                    this.ctx.fill();
+                    this.ctx.beginPath(); this.ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2); this.ctx.fill();
                     this.ctx.restore();
                 });
 
-                // Render Floating Combat Text
                 this.floatingTexts.forEach(ft => {
                     this.ctx.save();
                     this.ctx.font = `bold ${ft.size}px 'Segoe UI', sans-serif`;
@@ -1142,80 +1014,65 @@
         class PlayerEntity {
             constructor(data, x, y) {
                 this.data = data;
-                this.x = x;
-                this.y = y;
+                this.x = x; this.y = y;
                 this.radius = 22;
 
-                // Base Stats
-                this.maxHp = data.stats.hp;
-                this.hp = this.maxHp;
+                this.maxHp = data.stats.hp; this.hp = this.maxHp;
                 this.baseSpeed = data.stats.speed;
-                this.speed = this.baseSpeed * 28; // scale up for canvas pixel speed
+                this.speed = this.baseSpeed * 28;
                 this.damage = data.stats.damage;
                 this.dodge = data.stats.dodge;
                 this.critRate = data.stats.critRate;
                 this.critDmg = data.stats.critDmg;
                 this.dmgReduce = data.stats.dmgReduce || 0;
 
-                // Timers & States
                 this.isImmune = false;
                 this.immuneTimer = 0;
-                this.isDashing = false;
                 this.dashCdTimer = 0;
-                this.dashSpeedMult = 2.8;
 
-                // Skill Timers
                 this.skill1CdTimer = 0;
                 this.skill2CdTimer = 0;
                 this.basicAttackTimer = 0;
 
-                // Stun State
-                this.isStunned = false;
-                this.stunTimer = 0;
+                this.isStunned = false; this.stunTimer = 0;
 
-                // Character-Specific Mechanics
                 if (data.id === 'ninja') {
-                    this.maxDashCharges = 3;
-                    this.dashCharges = 3;
-                    this.dashChargeTimer = 0;
+                    this.maxDashCharges = 3; this.dashCharges = 3; this.dashChargeTimer = 0;
+                    this.afterimages = [];
                 } else if (data.id === 'cowboy') {
-                    this.ammo = 6;
-                    this.isReloading = false;
-                    this.reloadTimer = 0;
-                    this.idleReloadTimer = 0;
+                    this.ammo = 6; this.isReloading = false; this.reloadTimer = 0; this.idleReloadTimer = 0;
                     this.huntingHourBuff = 0;
                 } else if (data.id === 'knight') {
                     this.isShieldActive = false;
                     this.isCastingJustice = false;
                     this.justiceCastTimer = 0;
+                    this.targetAngle = 0;
                 }
             }
 
             update(dt) {
-                // Cooldowns countdown
                 if (this.dashCdTimer > 0) this.dashCdTimer -= dt;
                 if (this.skill1CdTimer > 0) this.skill1CdTimer -= dt;
                 if (this.skill2CdTimer > 0) this.skill2CdTimer -= dt;
                 if (this.basicAttackTimer > 0) this.basicAttackTimer -= dt;
 
-                // Immune timer
                 if (this.immuneTimer > 0) {
                     this.immuneTimer -= dt;
-                    if (this.immuneTimer <= 0 && !this.isShieldActive) {
-                        this.isImmune = false;
-                    }
+                    if (this.immuneTimer <= 0 && !this.isShieldActive) this.isImmune = false;
                 }
 
-                // Stun Status
                 if (this.stunTimer > 0) {
                     this.stunTimer -= dt;
                     if (this.stunTimer <= 0) this.isStunned = false;
-                    return; // Can't move or action while stunned
+                    return;
                 }
 
-                // PASSIVE MECHANICS UPDATE
-                if (this.data.id === 'ninja') {
-                    // Recharge Ninja dash charges (5s per charge)
+                // Ninja Afterimage decay
+                if (this.data.id === 'ninja' && this.afterimages) {
+                    for (let i = this.afterimages.length - 1; i >= 0; i--) {
+                        this.afterimages[i].alpha -= dt * 2.5;
+                        if (this.afterimages[i].alpha <= 0) this.afterimages.splice(i, 1);
+                    }
                     if (this.dashCharges < this.maxDashCharges) {
                         this.dashChargeTimer += dt;
                         if (this.dashChargeTimer >= 5.0) {
@@ -1224,48 +1081,37 @@
                         }
                     }
                 } else if (this.data.id === 'cowboy') {
-                    // Cowboy Buff & Reload mechanics
-                    if (this.huntingHourBuff > 0) {
-                        this.huntingHourBuff -= dt;
-                    }
-
+                    if (this.huntingHourBuff > 0) this.huntingHourBuff -= dt;
                     if (this.isReloading) {
                         this.reloadTimer -= dt;
                         if (this.reloadTimer <= 0) {
-                            this.ammo = 6;
-                            this.isReloading = false;
+                            this.ammo = 6; this.isReloading = false;
                             GameApp.addFloatingText('RELOADED!', this.x, this.y - 30, '#10b981');
                         }
                     } else if (this.ammo < 6) {
                         this.idleReloadTimer += dt;
                         if (this.idleReloadTimer >= 1.5) {
-                            this.ammo = 6;
-                            this.idleReloadTimer = 0;
+                            this.ammo = 6; this.idleReloadTimer = 0;
                             GameApp.addFloatingText('RELOADED!', this.x, this.y - 30, '#10b981');
                         }
                     }
                 } else if (this.data.id === 'knight') {
-                    // Knight Passive: Armor Shatter (HP < 50% -> Speed 10)
-                    if (this.hp < this.maxHp * 0.5) {
-                        this.speed = 10 * 28;
-                    } else {
-                        this.speed = this.baseSpeed * 28;
-                    }
+                    if (this.hp < this.maxHp * 0.5) this.speed = 10 * 28;
+                    else this.speed = this.baseSpeed * 28;
 
-                    // Cast time for Sword of Justice
                     if (this.isCastingJustice) {
                         this.justiceCastTimer -= dt;
+                        this.targetAngle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
                         if (this.justiceCastTimer <= 0) {
                             this.isCastingJustice = false;
                             this.executeJusticeSlash();
                         }
-                        return; // Casting prevents moving
+                        return; // Freeze movement during casting
                     }
                 }
 
-                // Movement Logic
-                let dx = 0;
-                let dy = 0;
+                // Movement
+                let dx = 0, dy = 0;
                 if (GameApp.keys['w'] || GameApp.keys['arrowup']) dy -= 1;
                 if (GameApp.keys['s'] || GameApp.keys['arrowdown']) dy += 1;
                 if (GameApp.keys['a'] || GameApp.keys['arrowleft']) dx -= 1;
@@ -1273,20 +1119,12 @@
 
                 if (dx !== 0 || dy !== 0) {
                     const len = Math.hypot(dx, dy);
-                    let currentSpeed = this.speed;
+                    let curSpeed = this.speed;
+                    if (this.data.id === 'cowboy' && this.huntingHourBuff > 0) curSpeed = 15 * 28;
 
-                    if (this.data.id === 'cowboy' && this.huntingHourBuff > 0) {
-                        currentSpeed = 15 * 28;
-                    }
+                    this.x += (dx / len) * curSpeed * dt;
+                    this.y += (dy / len) * curSpeed * dt;
 
-                    if (this.isDashing) {
-                        currentSpeed *= this.dashSpeedMult;
-                    }
-
-                    this.x += (dx / len) * currentSpeed * dt;
-                    this.y += (dy / len) * currentSpeed * dt;
-
-                    // Bounds check
                     this.x = Math.max(this.radius, Math.min(GameApp.canvas.width - this.radius, this.x));
                     this.y = Math.max(this.radius, Math.min(GameApp.canvas.height - this.radius, this.y));
                 }
@@ -1298,128 +1136,130 @@
                 if (this.data.id === 'ninja') {
                     if (this.dashCharges > 0) {
                         this.dashCharges--;
-                        this.performDash(0.6, 3.5); // Faster/longer for Ninja
+                        this.performNinjaBlink();
                     }
                 } else {
                     if (this.dashCdTimer <= 0) {
-                        this.dashCdTimer = 5.0; // 5s default cooldown
-                        this.performDash(0.5, 2.8);
+                        this.dashCdTimer = 5.0;
+                        this.performStandardDash();
                     }
                 }
             }
 
-            performDash(duration, speedMult) {
-                this.isDashing = true;
+            // Ninja Instant Teleport Blink
+            performNinjaBlink() {
+                const oldX = this.x;
+                const oldY = this.y;
+
+                let dx = 0, dy = 0;
+                if (GameApp.keys['w'] || GameApp.keys['arrowup']) dy -= 1;
+                if (GameApp.keys['s'] || GameApp.keys['arrowdown']) dy += 1;
+                if (GameApp.keys['a'] || GameApp.keys['arrowleft']) dx -= 1;
+                if (GameApp.keys['d'] || GameApp.keys['arrowright']) dx += 1;
+
+                let angle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
+                if (dx !== 0 || dy !== 0) angle = Math.atan2(dy, dx);
+
+                const blinkDist = 240;
+                this.x += Math.cos(angle) * blinkDist;
+                this.y += Math.sin(angle) * blinkDist;
+
+                this.x = Math.max(this.radius, Math.min(GameApp.canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(GameApp.canvas.height - this.radius, this.y));
+
+                // Spawn Afterimages along path
+                for (let i = 0; i <= 4; i++) {
+                    const ratio = i / 4;
+                    this.afterimages.push({
+                        x: oldX + (this.x - oldX) * ratio,
+                        y: oldY + (this.y - oldY) * ratio,
+                        alpha: 0.8, angle
+                    });
+                }
+
                 this.isImmune = true;
-                this.immuneTimer = duration;
-                this.dashSpeedMult = speedMult;
+                this.immuneTimer = 0.6;
+                GameApp.addFloatingText('BLINK!', this.x, this.y - 25, '#38bdf8', 16);
+            }
 
+            performStandardDash() {
+                this.isImmune = true;
+                this.immuneTimer = 0.6;
                 GameApp.addFloatingText('IMMUNE DASH!', this.x, this.y - 25, '#38bdf8', 16);
-
-                setTimeout(() => {
-                    this.isDashing = false;
-                }, duration * 1000);
             }
 
             basicAttack() {
-                if (this.isStunned || this.basicAttackTimer > 0) return;
-
+                if (this.isStunned || this.basicAttackTimer > 0 || this.isCastingJustice) return;
                 const mouseAngle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
 
                 if (this.data.id === 'ninja') {
-                    this.basicAttackTimer = 0.5; // 0.5s cooldown
-                    // Short range slash
+                    this.basicAttackTimer = 0.5;
                     GameApp.projectiles.push(new SlashProjectile(
-                        this.x, this.y, mouseAngle, this.damage * 1.0, this, 'player', 60, 0.2
+                        this.x, this.y, mouseAngle, this.damage, this, 'player', 60, 0.2
                     ));
                 } else if (this.data.id === 'cowboy') {
                     if (this.isReloading) return;
-
                     if (this.ammo <= 0) {
-                        this.isReloading = true;
-                        this.reloadTimer = 3.0;
+                        this.isReloading = true; this.reloadTimer = 3.0;
                         GameApp.addFloatingText('RELOADING (3s)...', this.x, this.y - 25, '#f87171');
                         return;
                     }
-
                     this.ammo--;
                     this.idleReloadTimer = 0;
                     this.basicAttackTimer = (this.huntingHourBuff > 0) ? 0.15 : 0.35;
-
                     const dmgMult = (this.huntingHourBuff > 0) ? 1.25 : 1.0;
                     GameApp.projectiles.push(new BulletProjectile(
                         this.x, this.y, mouseAngle, this.damage * dmgMult, this, 'player', 750
                     ));
-
                 } else if (this.data.id === 'knight') {
                     this.basicAttackTimer = 0.8;
-                    // Heavy melee slash with 10% stun chance
                     const isStunProc = Math.random() < 0.10;
                     GameApp.projectiles.push(new SlashProjectile(
-                        this.x, this.y, mouseAngle, this.damage * 1.0, this, 'player', 85, 0.3, isStunProc ? 0.5 : 0
+                        this.x, this.y, mouseAngle, this.damage, this, 'player', 85, 0.3, isStunProc ? 0.5 : 0
                     ));
                 }
             }
 
             useSkill1() {
-                if (this.isStunned || this.skill1CdTimer > 0) return;
+                if (this.isStunned || this.skill1CdTimer > 0 || this.isCastingJustice) return;
 
                 if (this.data.id === 'ninja') {
-                    // Wind Slash: 3 slashes fan out (75% dmg, 5s cd)
                     this.skill1CdTimer = 5.0;
                     const baseAngle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
-                    const offsets = [-0.25, 0, 0.25];
-                    offsets.forEach(off => {
-                        GameApp.projectiles.push(new WindSlashProjectile(
-                            this.x, this.y, baseAngle + off, this.damage * 0.75, this, 'player'
-                        ));
+                    [-0.25, 0, 0.25].forEach(off => {
+                        GameApp.projectiles.push(new WindSlashProjectile(this.x, this.y, baseAngle + off, this.damage * 0.75, this, 'player'));
                     });
                 } else if (this.data.id === 'cowboy') {
-                    // Bullet Storm: 6 bullets fan out (125% dmg, 10s cd)
                     this.skill1CdTimer = 10.0;
                     const baseAngle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
-                    const angles = [-0.5, -0.3, -0.1, 0.1, 0.3, 0.5];
-                    angles.forEach(ang => {
-                        GameApp.projectiles.push(new BulletProjectile(
-                            this.x, this.y, baseAngle + ang, this.damage * 1.25, this, 'player', 800
-                        ));
+                    [-0.5, -0.3, -0.1, 0.1, 0.3, 0.5].forEach(ang => {
+                        GameApp.projectiles.push(new BulletProjectile(this.x, this.y, baseAngle + ang, this.damage * 1.25, this, 'player', 800));
                     });
                 } else if (this.data.id === 'knight') {
-                    // Solid Shield: Immune 5s, 15s cd
                     this.skill1CdTimer = 15.0;
-                    this.isShieldActive = true;
-                    this.isImmune = true;
-                    this.immuneTimer = 5.0;
+                    this.isShieldActive = true; this.isImmune = true; this.immuneTimer = 5.0;
                     GameApp.addFloatingText('SHIELD ACTIVE (5s)!', this.x, this.y - 25, '#38bdf8', 18);
-
-                    setTimeout(() => {
-                        this.isShieldActive = false;
-                    }, 5000);
+                    setTimeout(() => { this.isShieldActive = false; }, 5000);
                 }
             }
 
             useSkill2() {
-                if (this.isStunned || this.skill2CdTimer > 0) return;
+                if (this.isStunned || this.skill2CdTimer > 0 || this.isCastingJustice) return;
 
                 if (this.data.id === 'ninja') {
-                    // Shuriken: 5 shurikens summon & home toward boss (75% dmg, 10s cd)
                     this.skill2CdTimer = 10.0;
                     for (let i = 0; i < 5; i++) {
                         setTimeout(() => {
                             if (GameApp.boss) {
-                                GameApp.projectiles.push(new ShurikenProjectile(
-                                    this.x, this.y, this.damage * 0.75, this, GameApp.boss
-                                ));
+                                GameApp.projectiles.push(new ShurikenProjectile(this.x, this.y, this.damage * 0.75, this, GameApp.boss));
                             }
                         }, i * 120);
                     }
                 } else if (this.data.id === 'cowboy') {
-                    // Hunting Hour: Buff 5s, 20s cd
                     this.skill2CdTimer = 20.0;
                     this.huntingHourBuff = 5.0;
                     GameApp.addFloatingText('HUNTING HOUR (BUFF 5s)!', this.x, this.y - 25, '#fbbf24', 18);
                 } else if (this.data.id === 'knight') {
-                    // Sword of Justice: 2s cast time, giant slash 200% dmg, 100% 2s stun, 20s cd
                     this.skill2CdTimer = 20.0;
                     this.isCastingJustice = true;
                     this.justiceCastTimer = 2.0;
@@ -1428,10 +1268,38 @@
             }
 
             executeJusticeSlash() {
-                const mouseAngle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
                 GameApp.projectiles.push(new SlashProjectile(
-                    this.x, this.y, mouseAngle, this.damage * 2.0, this, 'player', 220, 0.5, 2.0
+                    this.x, this.y, this.targetAngle, this.damage * 2.0, this, 'player', 240, 0.5, 2.0
                 ));
+            }
+
+            drawKnightTelegraph(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.targetAngle);
+
+                const fillRatio = (2.0 - this.justiceCastTimer) / 2.0;
+                
+                // Telegraph Arc/Sector
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
+                ctx.strokeStyle = '#ef4444';
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, 240, -0.6, 0.6);
+                ctx.closePath();
+                ctx.fill();
+                ctx.stroke();
+
+                // Fill progress
+                ctx.fillStyle = 'rgba(251, 191, 36, 0.4)';
+                ctx.beginPath();
+                ctx.moveTo(0, 0);
+                ctx.arc(0, 0, 240 * fillRatio, -0.6, 0.6);
+                ctx.closePath();
+                ctx.fill();
+
+                ctx.restore();
             }
 
             takeDamage(amount) {
@@ -1439,59 +1307,42 @@
                     GameApp.addFloatingText('IMMUNE', this.x, this.y - 20, '#60a5fa');
                     return;
                 }
-
-                // Dodge check
                 if (Math.random() * 100 < this.dodge) {
                     GameApp.addFloatingText('DODGE', this.x, this.y - 20, '#34d399');
                     return;
                 }
-
-                // Damage reduction
                 const finalDmg = Math.max(1, amount * (1 - this.dmgReduce / 100));
                 this.hp -= finalDmg;
                 GameApp.addFloatingText(`-${Math.ceil(finalDmg)}`, this.x, this.y - 20, '#ef4444');
-
-                if (this.hp <= 0) {
-                    this.hp = 0;
-                    GameApp.endMatch(false);
-                }
+                if (this.hp <= 0) { this.hp = 0; GameApp.endMatch(false); }
             }
 
             applyStun(duration) {
                 if (this.isImmune) return;
-                this.isStunned = true;
-                this.stunTimer = duration;
+                this.isStunned = true; this.stunTimer = duration;
                 GameApp.addFloatingText('STUNNED!', this.x, this.y - 25, '#f59e0b', 20);
             }
 
             draw(ctx) {
                 const angle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
 
-                // Shield Aura
+                // Ninja Afterimages
+                if (this.data.id === 'ninja' && this.afterimages) {
+                    this.afterimages.forEach(img => {
+                        ctx.save();
+                        ctx.globalAlpha = img.alpha * 0.5;
+                        Assets.drawPlaceholder(ctx, 'ninja', img.x, img.y, this.radius, '#60a5fa', img.angle);
+                        ctx.restore();
+                    });
+                }
+
                 if (this.isShieldActive) {
                     ctx.save();
-                    ctx.strokeStyle = '#38bdf8';
-                    ctx.lineWidth = 4;
-                    ctx.shadowColor = '#00d2ff';
-                    ctx.shadowBlur = 12;
-                    ctx.beginPath();
-                    ctx.arc(this.x, this.y, this.radius + 10, 0, Math.PI * 2);
-                    ctx.stroke();
+                    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 4;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 10, 0, Math.PI * 2); ctx.stroke();
                     ctx.restore();
                 }
 
-                // Casting bar for Knight
-                if (this.isCastingJustice) {
-                    ctx.save();
-                    ctx.fillStyle = 'rgba(0,0,0,0.6)';
-                    ctx.fillRect(this.x - 30, this.y - 45, 60, 8);
-                    ctx.fillStyle = '#fbbf24';
-                    const pct = (2.0 - this.justiceCastTimer) / 2.0;
-                    ctx.fillRect(this.x - 30, this.y - 45, 60 * pct, 8);
-                    ctx.restore();
-                }
-
-                // Draw Asset or Placeholder
                 const img = Assets.images[this.data.id];
                 if (Assets.loaded[this.data.id] && img) {
                     ctx.save();
@@ -1506,36 +1357,27 @@
         }
 
         /* ==========================================================================
-           BOSS ENTITY CLASS (AI & CHIÊU THỨC)
+           BOSS ENTITY CLASS
            ========================================================================== */
         class BossEntity {
             constructor(data, x, y) {
                 this.data = data;
-                this.x = x;
-                this.y = y;
+                this.x = x; this.y = y;
                 this.radius = 45;
-
-                this.maxHp = data.stats.hp;
-                this.hp = this.maxHp;
+                this.maxHp = data.stats.hp; this.hp = this.maxHp;
                 this.baseSpeed = data.stats.speed;
                 this.speed = this.baseSpeed * 15;
                 this.damage = data.stats.damage;
                 this.dodge = data.stats.dodge;
 
-                // Boss AI Skill Timers
                 this.skill1Timer = 2.0;
                 this.skill2Timer = 7.0;
                 this.skill3Timer = 10.0;
 
-                // Frenzy Tracker (Lost 50 HP -> +5 Speed, +5 DMG)
-                this.lostHpStack = 0;
-
-                this.isStunned = false;
-                this.stunTimer = 0;
+                this.isStunned = false; this.stunTimer = 0;
             }
 
             update(dt) {
-                // Stun Handling
                 if (this.stunTimer > 0) {
                     this.stunTimer -= dt;
                     if (this.stunTimer <= 0) this.isStunned = false;
@@ -1545,16 +1387,11 @@
                 const player = GameApp.player;
                 if (!player) return;
 
-                // Calculate Frenzy Passive Boost
                 const lostHp = this.maxHp - this.hp;
                 const stacks = Math.floor(lostHp / 50);
-                const bonusSpeed = stacks * 5;
-                const bonusDmg = stacks * 5;
+                const currentSpeed = (this.baseSpeed + stacks * 5) * 15;
+                const currentDmg = this.damage + stacks * 5;
 
-                const currentSpeed = (this.baseSpeed + bonusSpeed) * 15;
-                const currentDmg = this.damage + bonusDmg;
-
-                // AI Movement toward player
                 const dx = player.x - this.x;
                 const dy = player.y - this.y;
                 const dist = Math.hypot(dx, dy);
@@ -1564,109 +1401,61 @@
                     this.y += (dy / dist) * currentSpeed * dt;
                 }
 
-                // AI Skill Timers
                 this.skill1Timer -= dt;
                 this.skill2Timer -= dt;
                 this.skill3Timer -= dt;
 
-                // Skill 1: 3 fast small fireballs in a row (2s CD)
                 if (this.skill1Timer <= 0) {
                     this.skill1Timer = 2.0;
-                    this.castSkill1(currentDmg);
+                    const angle = Math.atan2(player.y - this.y, player.x - this.x);
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            GameApp.projectiles.push(new FireballProjectile(this.x, this.y, angle, currentDmg, this, 'boss', 550, 12));
+                        }, i * 180);
+                    }
                 }
 
-                // Skill 2: 5 huge fireballs in map center flying random directions (7s CD)
                 if (this.skill2Timer <= 0) {
                     this.skill2Timer = 7.0;
-                    this.castSkill2(currentDmg);
+                    const cx = GameApp.canvas.width / 2, cy = GameApp.canvas.height / 2;
+                    GameApp.addFloatingText('LORD SUMMONS FIREBALLS!', this.x, this.y - 40, '#ef4444', 22);
+                    for (let i = 0; i < 5; i++) {
+                        GameApp.projectiles.push(new FireballProjectile(cx, cy, Math.random() * Math.PI * 2, currentDmg * 2.0, this, 'boss', 300, 32));
+                    }
                 }
 
-                // Skill 3: Map-wide Roar (10s CD)
                 if (this.skill3Timer <= 0) {
                     this.skill3Timer = 10.0;
-                    this.castSkill3(currentDmg);
-                }
-            }
-
-            castSkill1(baseDmg) {
-                const angle = Math.atan2(GameApp.player.y - this.y, GameApp.player.x - this.x);
-                for (let i = 0; i < 3; i++) {
-                    setTimeout(() => {
-                        GameApp.projectiles.push(new FireballProjectile(
-                            this.x, this.y, angle, baseDmg * 1.0, this, 'boss', 550, 12
-                        ));
-                    }, i * 180);
-                }
-            }
-
-            castSkill2(baseDmg) {
-                const centerX = GameApp.canvas.width / 2;
-                const centerY = GameApp.canvas.height / 2;
-                GameApp.addFloatingText('LORD SUMMONS GIANT FIREBALLS!', this.x, this.y - 40, '#ef4444', 22);
-
-                for (let i = 0; i < 5; i++) {
-                    const randomAngle = Math.random() * Math.PI * 2;
-                    GameApp.projectiles.push(new FireballProjectile(
-                        centerX, centerY, randomAngle, baseDmg * 2.0, this, 'boss', 300, 32
-                    ));
-                }
-            }
-
-            castSkill3(baseDmg) {
-                GameApp.addFloatingText('ROAR OF THE LORD!', this.x, this.y - 40, '#f97316', 24);
-                
-                // Shockwave particle effect
-                for (let i = 0; i < 36; i++) {
-                    const ang = (i * 10) * Math.PI / 180;
-                    GameApp.particles.push({
-                        x: this.x, y: this.y,
-                        vx: Math.cos(ang) * 600, vy: Math.sin(ang) * 600,
-                        size: 6, color: '#f97316', life: 0.6
-                    });
-                }
-
-                // Map-wide damage & knockback & stun
-                if (GameApp.player) {
-                    GameApp.player.takeDamage(baseDmg * 0.5);
-                    GameApp.player.applyStun(2.5);
-
-                    // Knockback
-                    const kAng = Math.atan2(GameApp.player.y - this.y, GameApp.player.x - this.x);
-                    GameApp.player.x += Math.cos(kAng) * 80;
-                    GameApp.player.y += Math.sin(kAng) * 80;
+                    GameApp.addFloatingText('ROAR OF THE LORD!', this.x, this.y - 40, '#f97316', 24);
+                    if (GameApp.player) {
+                        GameApp.player.takeDamage(currentDmg * 0.5);
+                        GameApp.player.applyStun(2.5);
+                        const kAng = Math.atan2(GameApp.player.y - this.y, GameApp.player.x - this.x);
+                        GameApp.player.x += Math.cos(kAng) * 80;
+                        GameApp.player.y += Math.sin(kAng) * 80;
+                    }
                 }
             }
 
             takeDamage(amount, attacker) {
-                // Dodge check
                 if (Math.random() * 100 < this.dodge) {
                     GameApp.addFloatingText('BOSS DODGE', this.x, this.y - 30, '#34d399');
                     return;
                 }
-
-                // Crit check
                 let isCrit = false;
                 if (attacker && Math.random() * 100 < attacker.critRate) {
                     isCrit = true;
                     amount *= (attacker.critDmg / 100);
                 }
-
                 this.hp -= amount;
-                if (isCrit) {
-                    GameApp.addFloatingText(`CRIT! -${Math.ceil(amount)}`, this.x, this.y - 30, '#fbbf24', 24);
-                } else {
-                    GameApp.addFloatingText(`-${Math.ceil(amount)}`, this.x, this.y - 30, '#f87171');
-                }
+                if (isCrit) GameApp.addFloatingText(`CRIT! -${Math.ceil(amount)}`, this.x, this.y - 30, '#fbbf24', 24);
+                else GameApp.addFloatingText(`-${Math.ceil(amount)}`, this.x, this.y - 30, '#f87171');
 
-                if (this.hp <= 0) {
-                    this.hp = 0;
-                    GameApp.endMatch(true);
-                }
+                if (this.hp <= 0) { this.hp = 0; GameApp.endMatch(true); }
             }
 
             applyStun(duration) {
-                this.isStunned = true;
-                this.stunTimer = duration;
+                this.isStunned = true; this.stunTimer = duration;
                 GameApp.addFloatingText('BOSS STUNNED!', this.x, this.y - 35, '#f59e0b', 22);
             }
 
@@ -1687,72 +1476,46 @@
         }
 
         /* ==========================================================================
-           PROJECTILES & ATTACK VISUALS CLASSES
+           PROJECTILES
            ========================================================================== */
-        
-        // Bullet Projectile
         class BulletProjectile {
             constructor(x, y, angle, damage, owner, faction, speed = 700) {
                 this.x = x; this.y = y;
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                this.damage = damage;
-                this.owner = owner;
-                this.faction = faction;
-                this.radius = 5;
-                this.destroyed = false;
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.damage = damage; this.owner = owner; this.faction = faction;
+                this.radius = 5; this.destroyed = false;
             }
             update(dt) {
-                this.x += this.vx * dt;
-                this.y += this.vy * dt;
-
-                // Hit detection
+                this.x += this.vx * dt; this.y += this.vy * dt;
                 if (this.faction === 'player' && GameApp.boss) {
-                    const dist = Math.hypot(GameApp.boss.x - this.x, GameApp.boss.y - this.y);
-                    if (dist < GameApp.boss.radius + this.radius) {
+                    if (Math.hypot(GameApp.boss.x - this.x, GameApp.boss.y - this.y) < GameApp.boss.radius + this.radius) {
                         GameApp.boss.takeDamage(this.damage, this.owner);
                         this.destroyed = true;
                     }
                 }
-                // Out of screen
-                if (this.x < 0 || this.x > GameApp.canvas.width || this.y < 0 || this.y > GameApp.canvas.height) {
-                    this.destroyed = true;
-                }
+                if (this.x < 0 || this.x > GameApp.canvas.width || this.y < 0 || this.y > GameApp.canvas.height) this.destroyed = true;
             }
             draw(ctx) {
                 ctx.save();
                 ctx.fillStyle = '#f59e0b';
-                ctx.shadowColor = '#fbbf24';
-                ctx.shadowBlur = 8;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
         }
 
-        // Melee Slash Projectile
         class SlashProjectile {
             constructor(x, y, angle, damage, owner, faction, arcRadius = 70, duration = 0.25, stunDuration = 0) {
-                this.x = x; this.y = y;
-                this.angle = angle;
-                this.damage = damage;
-                this.owner = owner;
-                this.faction = faction;
-                this.arcRadius = arcRadius;
-                this.duration = duration;
-                this.timer = duration;
-                this.stunDuration = stunDuration;
-                this.hasHit = false;
-                this.destroyed = false;
+                this.x = x; this.y = y; this.angle = angle;
+                this.damage = damage; this.owner = owner; this.faction = faction;
+                this.arcRadius = arcRadius; this.duration = duration; this.timer = duration;
+                this.stunDuration = stunDuration; this.hasHit = false; this.destroyed = false;
             }
             update(dt) {
                 this.timer -= dt;
                 if (this.timer <= 0) this.destroyed = true;
 
                 if (!this.hasHit && this.faction === 'player' && GameApp.boss) {
-                    const dist = Math.hypot(GameApp.boss.x - this.owner.x, GameApp.boss.y - this.owner.y);
-                    if (dist < this.arcRadius + GameApp.boss.radius) {
+                    if (Math.hypot(GameApp.boss.x - this.owner.x, GameApp.boss.y - this.owner.y) < this.arcRadius + GameApp.boss.radius) {
                         GameApp.boss.takeDamage(this.damage, this.owner);
                         if (this.stunDuration > 0) GameApp.boss.applyStun(this.stunDuration);
                         this.hasHit = true;
@@ -1765,76 +1528,51 @@
                 ctx.rotate(this.angle);
                 ctx.strokeStyle = this.stunDuration > 0 ? '#fbbf24' : '#60a5fa';
                 ctx.lineWidth = 8;
-                ctx.beginPath();
-                ctx.arc(0, 0, this.arcRadius, -0.6, 0.6);
-                ctx.stroke();
+                ctx.beginPath(); ctx.arc(0, 0, this.arcRadius, -0.6, 0.6); ctx.stroke();
                 ctx.restore();
             }
         }
 
-        // Wind Slash Projectile (Ninja Skill 1)
         class WindSlashProjectile {
             constructor(x, y, angle, damage, owner, faction) {
                 this.x = x; this.y = y;
-                this.vx = Math.cos(angle) * 650;
-                this.vy = Math.sin(angle) * 650;
-                this.angle = angle;
-                this.damage = damage;
-                this.owner = owner;
-                this.faction = faction;
-                this.radius = 16;
-                this.destroyed = false;
+                this.vx = Math.cos(angle) * 650; this.vy = Math.sin(angle) * 650;
+                this.angle = angle; this.damage = damage; this.owner = owner; this.faction = faction;
+                this.radius = 16; this.destroyed = false;
             }
             update(dt) {
-                this.x += this.vx * dt;
-                this.y += this.vy * dt;
-
+                this.x += this.vx * dt; this.y += this.vy * dt;
                 if (this.faction === 'player' && GameApp.boss) {
-                    const dist = Math.hypot(GameApp.boss.x - this.x, GameApp.boss.y - this.y);
-                    if (dist < GameApp.boss.radius + this.radius) {
+                    if (Math.hypot(GameApp.boss.x - this.x, GameApp.boss.y - this.y) < GameApp.boss.radius + this.radius) {
                         GameApp.boss.takeDamage(this.damage, this.owner);
                         this.destroyed = true;
                     }
                 }
-                if (this.x < 0 || this.x > GameApp.canvas.width || this.y < 0 || this.y > GameApp.canvas.height) {
-                    this.destroyed = true;
-                }
+                if (this.x < 0 || this.x > GameApp.canvas.width || this.y < 0 || this.y > GameApp.canvas.height) this.destroyed = true;
             }
             draw(ctx) {
                 ctx.save();
                 ctx.translate(this.x, this.y);
                 ctx.rotate(this.angle);
-                ctx.strokeStyle = '#38bdf8';
-                ctx.lineWidth = 5;
-                ctx.beginPath();
-                ctx.arc(0, 0, 20, -0.8, 0.8);
-                ctx.stroke();
+                ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 5;
+                ctx.beginPath(); ctx.arc(0, 0, 20, -0.8, 0.8); ctx.stroke();
                 ctx.restore();
             }
         }
 
-        // Shuriken Homing Projectile (Ninja Skill 2)
         class ShurikenProjectile {
             constructor(x, y, damage, owner, target) {
-                this.x = x; this.y = y;
-                this.damage = damage;
-                this.owner = owner;
-                this.target = target;
-                this.speed = 550;
-                this.rotation = 0;
-                this.radius = 10;
-                this.destroyed = false;
+                this.x = x; this.y = y; this.damage = damage; this.owner = owner; this.target = target;
+                this.speed = 550; this.rotation = 0; this.radius = 10; this.destroyed = false;
             }
             update(dt) {
                 if (!this.target) { this.destroyed = true; return; }
-
                 const angle = Math.atan2(this.target.y - this.y, this.target.x - this.x);
                 this.x += Math.cos(angle) * this.speed * dt;
                 this.y += Math.sin(angle) * this.speed * dt;
                 this.rotation += 15 * dt;
 
-                const dist = Math.hypot(this.target.x - this.x, this.target.y - this.y);
-                if (dist < this.target.radius + this.radius) {
+                if (Math.hypot(this.target.x - this.x, this.target.y - this.y) < this.target.radius + this.radius) {
                     this.target.takeDamage(this.damage, this.owner);
                     this.destroyed = true;
                 }
@@ -1852,49 +1590,32 @@
             }
         }
 
-        // Fireball Projectile (Boss Skill)
         class FireballProjectile {
             constructor(x, y, angle, damage, owner, faction, speed = 500, radius = 15) {
                 this.x = x; this.y = y;
-                this.vx = Math.cos(angle) * speed;
-                this.vy = Math.sin(angle) * speed;
-                this.damage = damage;
-                this.owner = owner;
-                this.faction = faction;
-                this.radius = radius;
-                this.destroyed = false;
+                this.vx = Math.cos(angle) * speed; this.vy = Math.sin(angle) * speed;
+                this.damage = damage; this.owner = owner; this.faction = faction;
+                this.radius = radius; this.destroyed = false;
             }
             update(dt) {
-                this.x += this.vx * dt;
-                this.y += this.vy * dt;
-
+                this.x += this.vx * dt; this.y += this.vy * dt;
                 if (this.faction === 'boss' && GameApp.player) {
-                    const dist = Math.hypot(GameApp.player.x - this.x, GameApp.player.y - this.y);
-                    if (dist < GameApp.player.radius + this.radius) {
+                    if (Math.hypot(GameApp.player.x - this.x, GameApp.player.y - this.y) < GameApp.player.radius + this.radius) {
                         GameApp.player.takeDamage(this.damage);
                         this.destroyed = true;
                     }
                 }
-                if (this.x < -50 || this.x > GameApp.canvas.width + 50 || this.y < -50 || this.y > GameApp.canvas.height + 50) {
-                    this.destroyed = true;
-                }
+                if (this.x < -50 || this.x > GameApp.canvas.width + 50 || this.y < -50 || this.y > GameApp.canvas.height + 50) this.destroyed = true;
             }
             draw(ctx) {
                 ctx.save();
                 ctx.fillStyle = '#ef4444';
-                ctx.shadowColor = '#f97316';
-                ctx.shadowBlur = 15;
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
         }
 
-        // Initialize App on Window Load
-        window.onload = () => {
-            GameApp.init();
-        };
+        window.onload = () => { GameApp.init(); };
     </script>
 </body>
 </html>
