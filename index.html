@@ -63,10 +63,9 @@
 
     <!-- JAVASCRIPT SYSTEM ENGINE -->
     <script>
-        // Store Keys
         const DB_KEY = 'vsclox_db_v5';
 
-        // Default Games Data (Đã chuyển The Mysterious Portal lên vị trí số 1 & thêm cờ featured)
+        // Danh sách game bao gồm Boss Rush & The Mysterious Portal
         const DEFAULT_GAMES = [
             {
                 id: "mysterious-portal",
@@ -82,6 +81,22 @@
                 userVotes: {},
                 comments: [
                     { author: "An_Dev", rating: 5, text: "Đã cập nhật phiên bản Enhanced Edition cực đỉnh!", date: "2026-08-15 10:30" }
+                ]
+            },
+            {
+                id: "boss-rush",
+                title: "Boss Rush",
+                creator: "An_Dev",
+                icon: "⚔️",
+                bgGradient: "from-red-600 via-rose-950 to-slate-950",
+                desc: "Thử thách chiến đấu hành động nghẹt thở với các Chúa tể Boss. Chọn nhân vật, kỹ năng và lướt né đòn điêu luyện.",
+                path: "bossrush.html",
+                likes: 410,
+                dislikes: 5,
+                featured: true,
+                userVotes: {},
+                comments: [
+                    { author: "An_Dev", rating: 5, text: "Bản cập nhật v1.2.0 với Telegraph zone và Blink siêu mượt!", date: "2026-09-26 20:00" }
                 ]
             },
             {
@@ -134,22 +149,42 @@
             if (!data) {
                 const initial = {
                     users: [
-                        { username: "Player1", password: "123", role: "user", coins: 1500, gems: 120, favorites: ["mysterious-portal"] },
+                        { username: "Player1", password: "123", role: "user", coins: 1500, gems: 120, favorites: ["mysterious-portal", "boss-rush"] },
                         { username: "GamerPro", password: "123", role: "user", coins: 8500, gems: 450, favorites: ["rivals"] },
                         { username: "SonTungMTP", password: "123", role: "user", coins: 36700, gems: 3670, favorites: ["sols-rng"] }
                     ],
                     currentUser: null,
                     games: DEFAULT_GAMES,
                     trash: [],
-                    announcement: "🔥 KHÁM PHÁ NGAY: The Mysterious Portal - Siêu phẩm game nhập vai cánh cổng kỳ bí đã chính thức nâng cấp!",
+                    announcement: "🔥 KHÁM PHÁ NGAY: Boss Rush & The Mysterious Portal - Đấu trường hành động đỉnh cao đã cập bến VSClox!",
                     chatHistory: [
-                        { sender: 'ai', text: 'Xin chào! Mình là VSClox AI. Bạn đã thử chơi siêu phẩm The Mysterious Portal chưa?' }
+                        { sender: 'ai', text: 'Xin chào! Mình là VSClox AI. Bạn đã thử chơi tựa game Boss Rush mới nhất chưa?' }
                     ]
                 };
                 localStorage.setItem(DB_KEY, JSON.stringify(initial));
                 return initial;
             }
-            return JSON.parse(data);
+            let parsed = JSON.parse(data);
+            if (!parsed.games.some(g => g.id === 'boss-rush')) {
+                parsed.games.unshift({
+                    id: "boss-rush",
+                    title: "Boss Rush",
+                    creator: "An_Dev",
+                    icon: "⚔️",
+                    bgGradient: "from-red-600 via-rose-950 to-slate-950",
+                    desc: "Thử thách chiến đấu hành động nghẹt thở với các Chúa tể Boss. Chọn nhân vật, kỹ năng và lướt né đòn điêu luyện.",
+                    path: "bossrush.html",
+                    likes: 410,
+                    dislikes: 5,
+                    featured: true,
+                    userVotes: {},
+                    comments: [
+                        { author: "An_Dev", rating: 5, text: "Bản cập nhật v1.2.0 với Telegraph zone và Blink siêu mượt!", date: "2026-09-26 20:00" }
+                    ]
+                });
+                saveDB(parsed);
+            }
+            return parsed;
         }
 
         function saveDB(db) {
@@ -157,10 +192,9 @@
         }
 
         let db = loadDB();
-        let currentFilter = 'all'; // 'all' or 'favorites'
+        let currentFilter = 'all';
         let activeAdminTab = 'addGame';
 
-        // LỆNH TẠO ADMIN BẰNG TERMINAL / CONSOLE
         window.VSCloxAdmin = {
             createAdmin: function(username, password) {
                 if (!username || !password) {
@@ -188,7 +222,6 @@
             }
         };
 
-        // RENDER ENGINE
         function render() {
             const app = document.getElementById('app');
             const chatbotWidget = document.getElementById('aiChatbotWidget');
@@ -291,25 +324,25 @@
                             <p class="text-xs text-slate-400">Trải nghiệm các tựa game tuyệt vời trực tiếp trên Visual Studio Code.</p>
                         </div>
 
-                        <!-- FEATURED GAME SPOTLIGHT BANNER: THE MYSTERIOUS PORTAL -->
+                        <!-- SPOTLIGHT BANNER: BOSS RUSH -->
                         ${currentFilter === 'all' ? `
-                            <div class="relative bg-gradient-to-r from-violet-900 via-purple-900 to-slate-950 border-2 border-violet-500/60 rounded-3xl p-6 md:p-8 mb-8 overflow-hidden shadow-2xl shadow-purple-950/50 group">
-                                <div class="absolute -right-6 -bottom-8 text-[170px] opacity-15 select-none pointer-events-none group-hover:scale-110 transition-transform duration-700">🌀</div>
+                            <div class="relative bg-gradient-to-r from-red-950 via-rose-950 to-slate-950 border-2 border-red-500/60 rounded-3xl p-6 md:p-8 mb-8 overflow-hidden shadow-2xl shadow-red-950/50 group">
+                                <div class="absolute -right-6 -bottom-8 text-[170px] opacity-15 select-none pointer-events-none group-hover:scale-110 transition-transform duration-700">⚔️</div>
                                 <div class="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                                     <div class="flex items-center space-x-5">
-                                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-violet-600/30 border border-violet-400/50 flex items-center justify-center text-5xl md:text-6xl shadow-inner backdrop-blur portal-glow">
-                                            🌀
+                                        <div class="w-20 h-20 md:w-24 md:h-24 rounded-2xl bg-red-600/30 border border-red-400/50 flex items-center justify-center text-5xl md:text-6xl shadow-inner backdrop-blur">
+                                            ⚔️
                                         </div>
                                         <div>
                                             <div class="flex items-center space-x-2 mb-1.5">
                                                 <span class="bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow">
-                                                    <i class="fa-solid fa-fire mr-1"></i>GAME NỔI BẬT OF THE MONTH
+                                                    <i class="fa-solid fa-fire mr-1"></i>SIÊU PHẨM MỚI NHẤT
                                                 </span>
-                                                <span class="text-xs text-violet-300 font-bold bg-violet-950/80 px-2 py-0.5 rounded-md border border-violet-500/30">Enhanced Edition</span>
+                                                <span class="text-xs text-red-300 font-bold bg-red-950/80 px-2 py-0.5 rounded-md border border-red-500/30">v1.2.0 Action Arcade</span>
                                             </div>
-                                            <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight">The Mysterious Portal</h2>
+                                            <h2 class="text-2xl md:text-3xl font-black text-white tracking-tight">Boss Rush</h2>
                                             <p class="text-xs text-slate-300 mt-1.5 max-w-xl leading-relaxed">
-                                                Khám phá các cánh cổng kỳ bí, chiến đấu quái vật, gặp gỡ thương nhân và nâng cấp sức mạnh nhân vật. Trải nghiệm ngay hành trình chinh phục không gian kỳ diệu!
+                                                Thử thách chiến đấu hành động nghẹt thở với các Chúa tể Boss. Chọn nhân vật yêu thích (Ninja, Cowboy, Knight), sử dụng kỹ năng đặc biệt và lướt né đòn điêu luyện!
                                             </p>
                                             <div class="flex items-center space-x-4 mt-3 text-xs text-slate-400">
                                                 <span><i class="fa-solid fa-user-pen text-amber-400 mr-1"></i>Tác giả: <strong class="text-slate-200">An_Dev</strong></span>
@@ -318,11 +351,11 @@
                                         </div>
                                     </div>
                                     <div class="flex flex-row md:flex-col gap-2.5 w-full md:w-auto">
-                                        <a href="portal.html" target="_blank" class="flex-1 md:flex-initial bg-gradient-to-r from-violet-500 to-indigo-600 hover:from-violet-600 hover:to-indigo-700 text-white font-extrabold px-6 py-3 rounded-2xl flex items-center justify-center space-x-2 text-xs shadow-lg shadow-violet-900/50 transition-all hover:scale-105">
+                                        <a href="bossrush.html" target="_blank" class="flex-1 md:flex-initial bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-extrabold px-6 py-3 rounded-2xl flex items-center justify-center space-x-2 text-xs shadow-lg shadow-red-900/50 transition-all hover:scale-105">
                                             <i class="fa-solid fa-play"></i>
                                             <span>Chơi Ngay</span>
                                         </a>
-                                        <button onclick="openGameDetail('mysterious-portal')" class="bg-slate-900/80 hover:bg-slate-800 border border-violet-500/40 text-slate-200 font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors backdrop-blur">
+                                        <button onclick="openGameDetail('boss-rush')" class="bg-slate-900/80 hover:bg-slate-800 border border-red-500/40 text-slate-200 font-bold px-4 py-2.5 rounded-2xl text-xs transition-colors backdrop-blur">
                                             <i class="fa-solid fa-circle-info mr-1"></i> Chi tiết game
                                         </button>
                                     </div>
@@ -347,7 +380,6 @@
             renderChatMessages();
         }
 
-        // AUTH SCREEN
         let authTab = 'login';
         function renderAuthScreen() {
             return `
@@ -429,7 +461,6 @@
             render();
         }
 
-        // RENDER GAME CARDS (Thêm viền phát sáng & Tag Nổi bật cho The Mysterious Portal)
         function renderGameCards() {
             const currentUserObj = db.users.find(u => u.username === db.currentUser) || { favorites: [] };
             const isAdmin = currentUserObj.role === 'admin';
@@ -452,20 +483,19 @@
                 const isFav = currentUserObj.favorites?.includes(game.id);
                 const totalVotes = (game.likes || 0) + (game.dislikes || 0);
                 const ratingPct = totalVotes > 0 ? Math.round((game.likes / totalVotes) * 100) : 100;
-                const isFeaturedGame = game.id === 'mysterious-portal' || game.featured;
+                const isFeaturedGame = game.id === 'boss-rush' || game.id === 'mysterious-portal' || game.featured;
 
                 return `
-                    <div class="bg-slate-900 rounded-2xl border ${isFeaturedGame ? 'border-violet-500 ring-2 ring-violet-500/60 shadow-xl shadow-purple-950/40' : 'border-slate-800 hover:border-slate-700'} overflow-hidden transition-all flex flex-col group relative">
+                    <div class="bg-slate-900 rounded-2xl border ${game.id === 'boss-rush' ? 'border-red-500 ring-2 ring-red-500/60 shadow-xl shadow-red-950/40' : (isFeaturedGame ? 'border-violet-500 ring-2 ring-violet-500/60 shadow-xl shadow-purple-950/40' : 'border-slate-800 hover:border-slate-700')} overflow-hidden transition-all flex flex-col group relative">
                         ${isFeaturedGame ? `
-                            <div class="absolute top-2 right-2 z-20 bg-gradient-to-r from-violet-600 to-indigo-600 text-white font-black text-[9px] px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 uppercase tracking-wider">
-                                <i class="fa-solid fa-star text-amber-300"></i> NỔI BẬT
+                            <div class="absolute top-2 right-2 z-20 bg-gradient-to-r ${game.id === 'boss-rush' ? 'from-red-600 to-rose-600' : 'from-violet-600 to-indigo-600'} text-white font-black text-[9px] px-2.5 py-1 rounded-full shadow-lg flex items-center gap-1 uppercase tracking-wider">
+                                <i class="fa-solid fa-star text-amber-300"></i> ${game.id === 'boss-rush' ? 'MỚI' : 'NỔI BẬT'}
                             </div>
                         ` : ''}
 
                         <div class="h-36 bg-gradient-to-br ${game.bgGradient} p-4 flex items-center justify-center relative cursor-pointer" onclick="openGameDetail('${game.id}')">
-                            <span class="text-6xl group-hover:scale-110 transition-transform duration-300 z-10 ${isFeaturedGame ? 'portal-glow' : ''}">${game.icon}</span>
+                            <span class="text-6xl group-hover:scale-110 transition-transform duration-300 z-10 ${game.id === 'boss-rush' || game.id === 'mysterious-portal' ? 'portal-glow' : ''}">${game.icon}</span>
                             
-                            <!-- Favorite Heart Button -->
                             <button onclick="event.stopPropagation(); toggleFavorite('${game.id}')" 
                                     class="absolute top-3 left-3 z-20 w-8 h-8 rounded-xl bg-slate-950/60 backdrop-blur text-pink-500 hover:scale-110 flex items-center justify-center transition-all">
                                 <i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-heart text-sm"></i>
@@ -482,7 +512,7 @@
                         <div class="p-5 flex-1 flex flex-col justify-between">
                             <div>
                                 <div class="flex items-start justify-between mb-1">
-                                    <h3 onclick="openGameDetail('${game.id}')" class="font-bold text-sm text-white hover:text-purple-400 cursor-pointer transition-colors flex items-center">
+                                    <h3 onclick="openGameDetail('${game.id}')" class="font-bold text-sm text-white hover:text-red-400 cursor-pointer transition-colors flex items-center">
                                         ${game.title}
                                     </h3>
                                     <span class="text-[10px] bg-slate-800 px-2 py-0.5 rounded text-emerald-400 font-bold">${ratingPct}% 👍</span>
@@ -493,7 +523,7 @@
 
                             <div class="mt-4 flex gap-2">
                                 <a href="${game.path}" target="_blank" 
-                                   class="flex-1 ${isFeaturedGame ? 'bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500' : 'bg-emerald-600 hover:bg-emerald-500'} text-white font-bold py-2 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs transition-colors shadow-lg">
+                                   class="flex-1 ${game.id === 'boss-rush' ? 'bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500' : 'bg-emerald-600 hover:bg-emerald-500'} text-white font-bold py-2 px-3 rounded-xl flex items-center justify-center space-x-1.5 text-xs transition-colors shadow-lg">
                                     <i class="fa-solid fa-play text-xs"></i>
                                     <span>Chơi ngay</span>
                                 </a>
@@ -508,7 +538,6 @@
             }).join('');
         }
 
-        // CHI TIẾT GAME
         function openGameDetail(gameId) {
             const game = db.games.find(g => g.id === gameId);
             if (!game) return;
@@ -663,7 +692,6 @@
             openGameDetail(gameId);
         }
 
-        // BẢNG XẾP HẠNG LEADERBOARD
         function openLeaderboard() {
             const sortedUsers = [...db.users].sort((a, b) => ((b.coins || 0) + (b.gems || 0) * 10) - ((a.coins || 0) + (a.gems || 0) * 10));
 
@@ -691,7 +719,7 @@
                                         <div class="flex items-center space-x-3">
                                             <span class="text-base font-black w-7 text-center">${rankBadge}</span>
                                             <div>
-                                                <h4 class="font-bold text-white text-xs">${u.username} ${u.username === db.currentUser ? '<span class="text-[10px] text-amber-400">(Bạn)</span>' : ''}</h4>
+                                                <h4 class="font-bold text-white text-xs">${u.username}${u.username === db.currentUser ? '<span class="text-[10px] text-amber-400">(Bạn)</span>' : ''}</h4>
                                                 <span class="text-[10px] uppercase font-bold text-slate-500">${u.role}</span>
                                             </div>
                                         </div>
@@ -710,7 +738,6 @@
             `;
         }
 
-        // ADMIN PANEL
         function openAdminModal(tab = 'addGame') {
             const user = db.users.find(u => u.username === db.currentUser);
             if (!user || user.role !== 'admin') return;
@@ -937,7 +964,6 @@
             document.getElementById('modalContainer').innerHTML = '';
         }
 
-        // CHATBOT AI
         function toggleChat() {
             document.getElementById('chatWindow').classList.toggle('hidden');
         }
@@ -965,16 +991,16 @@
 
         function generateAIReply(query) {
             const q = query.toLowerCase();
+            if (q.includes('boss') || q.includes('rush') || q.includes('boss rush')) {
+                return `Boss Rush là tựa game hành động mới nhất trên VSClox! Hãy chọn Ninja, Cowboy hoặc Knight để chiến đấu với Lord.`;
+            }
             if (q.includes('admin') || q.includes('tạo admin') || q.includes('mật khẩu')) {
                 return `Để tạo hoặc nâng cấp tài khoản Admin, bạn hãy mở DevTools Console (F12) hoặc terminal và chạy lệnh:\n\nVSCloxAdmin.createAdmin('Tên_Của_Bạn', 'Mật_Khẩu')`;
             }
             if (q.includes('xếp hạng') || q.includes('bxh') || q.includes('đại gia')) {
                 return `Bảng Xếp Hạng dựa trên tổng số Coins & Gems của từng tài khoản. Nhấp vào mục 'Bảng Xếp Hạng' ở menu bên trái để xem ai đứng TOP nhé!`;
             }
-            if (q.includes('yêu thích') || q.includes('like') || q.includes('đánh giá')) {
-                return `Bạn có thể bấm vào biểu tượng ❤️ ở từng game để thêm vào danh sách Yêu Thích, hoặc xem Chi Tiết Game để thả Like/Dislike và viết bình luận!`;
-            }
-            return `Mình là VSClox AI. Hãy trải nghiệm tựa game nổi bật "The Mysterious Portal" hoặc khám phá các trò chơi tuyệt vời khác như Rivals, Sol's RNG và Pet Sim X nhé!`;
+            return `Mình là VSClox AI. Hãy trải nghiệm ngay tựa game "Boss Rush" hoặc "The Mysterious Portal" cực hot nhé!`;
         }
 
         function renderChatMessages() {
@@ -1001,7 +1027,6 @@
             db.games = temp;
         }
 
-        // INITIAL LAUNCH
         render();
     </script>
 </body>
