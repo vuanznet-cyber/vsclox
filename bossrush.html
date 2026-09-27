@@ -536,11 +536,11 @@
                 <h2 style="color:#ff4b2b; margin-bottom:15px;">NHẬT KÝ SỬA ĐỔI (CHANGE LOGS)</h2>
                 <div class="wiki-card">
                     <div>
-                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.3.0</h4>
+                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.4.0 - Thêm Dragon King</h4>
                         <ul style="margin-left:20px; line-height: 1.6; color:#cbd5e1; font-size:0.9rem;">
-                            <li><b>Fix lỗi Bất tử vĩnh viễn:</b> Khắc phục hoàn toàn lỗi Knight bị bất tử vĩnh viễn sau khi dùng Chiêu 1.</li>
-                            <li><b>Nâng cấp AI Boss:</b> Boss di chuyển thông minh hơn, liên tục đảo hướng lượn lách và chạy ngẫu nhiên làm tăng độ khó khi ngắm bắn.</li>
-                            <li><b>Thêm Hiệu ứng Rung Màn Hình (Screen Shake):</b> Đưa hiệu ứng rung chấn chân thực vào các kỹ năng uy lực, đòn gầm toàn map và chí mạng.</li>
+                            <li><b>Thêm Boss Mới: Dragon King (Vua Rồng):</b> Boss hệ Lửa sở hữu 500 Máu, 5% Miễn thương và Nội tại Thiêu Đốt rút máu liên tục.</li>
+                            <li><b>Kỹ năng Dragon King:</b> Hỏa Lốc (10 lốc xoáy), Thiên Thạch (3 đòn rơi kèm nổ đạn) và Phun Lửa (khi đuổi theo).</li>
+                            <li><b>Sửa lỗi & Cải tiến:</b> Khắc phục lỗi Knight bất tử, thêm hiệu ứng Rung Màn Hình và AI Boss di chuyển lượn lách biến ảo.</li>
                         </ul>
                     </div>
                 </div>
@@ -551,7 +551,7 @@
         <!-- ENDGAME OVERLAY -->
         <div id="menu-endgame" class="overlay-screen hidden">
             <h1 class="game-title" id="endgame-title">VICTORY!</h1>
-            <p id="endgame-desc" style="font-size: 1.2rem; color: #cbd5e1; margin-bottom: 25px;">Bạn đã hạ gục thành công Lord!</p>
+            <p id="endgame-desc" style="font-size: 1.2rem; color: #cbd5e1; margin-bottom: 25px;">Bạn đã hạ gục thành công Boss!</p>
             <div class="menu-btn-group">
                 <button class="btn btn-primary" onclick="GameApp.startMatch()">Đấu Lại</button>
                 <button class="btn btn-secondary" onclick="GameApp.showScreen('menu-main')">Về Menu Chính</button>
@@ -565,7 +565,7 @@
             loaded: {},
 
             init() {
-                const list = ['ninja', 'cowboy', 'knight', 'lord'];
+                const list = ['ninja', 'cowboy', 'knight', 'lord', 'dragon'];
                 list.forEach(name => {
                     const img = new Image();
                     img.src = `bossrush/${name}.png`;
@@ -600,6 +600,16 @@
                     ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
                     ctx.fillStyle = '#facc15';
                     ctx.beginPath(); ctx.arc(radius * 0.3, -10, 6, 0, Math.PI * 2); ctx.arc(radius * 0.3, 10, 6, 0, Math.PI * 2); ctx.fill();
+                } else if (type === 'dragon') {
+                    ctx.fillStyle = '#b91c1c';
+                    ctx.beginPath(); ctx.arc(0, 0, radius, 0, Math.PI * 2); ctx.fill();
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.beginPath();
+                    ctx.moveTo(radius * 0.2, -radius * 0.8); ctx.lineTo(radius * 0.8, -radius * 1.3); ctx.lineTo(radius * 0.5, -radius * 0.4); ctx.fill();
+                    ctx.beginPath();
+                    ctx.moveTo(radius * 0.2, radius * 0.8); ctx.lineTo(radius * 0.8, radius * 1.3); ctx.lineTo(radius * 0.5, radius * 0.4); ctx.fill();
+                    ctx.fillStyle = '#facc15';
+                    ctx.beginPath(); ctx.arc(radius * 0.4, -12, 6, 0, Math.PI * 2); ctx.arc(radius * 0.4, 12, 6, 0, Math.PI * 2); ctx.fill();
                 }
                 ctx.restore();
             }
@@ -614,9 +624,9 @@
                 if (saved) { try { this.data = JSON.parse(saved); } catch (e) {} }
             },
             save() { localStorage.setItem(this.KEY, JSON.stringify(this.data)); },
-            unlockKnight() {
+            unlockKnight(bossId) {
                 this.data.unlockedKnight = true;
-                if (!this.data.defeatedBosses.includes('lord')) this.data.defeatedBosses.push('lord');
+                if (!this.data.defeatedBosses.includes(bossId)) this.data.defeatedBosses.push(bossId);
                 this.save();
             }
         };
@@ -653,11 +663,19 @@
         const BOSSES = {
             lord: {
                 id: 'lord', name: 'Lord', color: '#ef4444',
-                stats: { hp: 250, speed: 10, damage: 10, dodge: 20 },
+                stats: { hp: 250, speed: 10, damage: 10, dodge: 20, dmgReduce: 0 },
                 passiveName: 'Điên Cuồng', passiveDesc: 'Mỗi khi mất 50 máu sẽ tăng 5 Tốc độ và 5 Sát thương.',
                 skill1Desc: 'Bắn 3 quả cầu lửa liên tiếp về phía người chơi (Hồi 2s).',
                 skill2Desc: 'Triệu hồi 5 quả cầu lửa khổng lồ giữa map bay hướng ngẫu nhiên (Hồi 7s).',
                 skill3Desc: 'Gầm toàn map gây 50% sát thương, choáng 2.5s và đẩy lùi (Hồi 10s).'
+            },
+            dragon: {
+                id: 'dragon', name: 'Dragon King', color: '#dc2626',
+                stats: { hp: 500, speed: 7, damage: 10, dodge: 10, dmgReduce: 5 },
+                passiveName: 'Thiêu Đốt', passiveDesc: 'Mọi đòn đánh/kỹ năng gây thiêu đốt: rút 1% máu tối đa mỗi giây trong 5s (không cộng dồn).',
+                skill1Desc: 'Hỏa Lốc: Triệu hồi 10 lốc xoáy lửa bay khắp map trong 5s (50% sát thương, hồi 15s).',
+                skill2Desc: 'Thiên Thạch: Thả 3 thiên thạch (200% sát thương), nổ bắn ra 5 đạn lửa (30% sát thương, hồi 20s).',
+                skill3Desc: 'Phun Lửa: Chỉ dùng khi truy đuổi, phun lửa hình nón 30-50% sát thương/s trong 2.5s (Hồi 10s).'
             }
         };
 
@@ -771,12 +789,12 @@
                     card.innerHTML = `
                         <div class="card-avatar-box" id="avatar-boss-${b.id}"></div>
                         <div class="card-name" style="color:${b.color}">${b.name}</div>
-                        <div class="card-desc">Chúa Tể Ngọn Lửa - Cuồng Bạo khi mất máu.</div>
+                        <div class="card-desc">${b.passiveName}: ${b.passiveDesc}</div>
                         <div class="card-stats">
                             <div class="card-stat-row"><span>Máu Boss:</span> <b>${b.stats.hp}</b></div>
                             <div class="card-stat-row"><span>Sát Thương:</span> <b>${b.stats.damage}</b></div>
                             <div class="card-stat-row"><span>Tốc Độ:</span> <b>${b.stats.speed}</b></div>
-                            <div class="card-stat-row"><span>Né Tránh:</span> <b>${b.stats.dodge}%</b></div>
+                            <div class="card-stat-row"><span>Miễn Thương:</span> <b>${b.stats.dmgReduce}%</b></div>
                         </div>
                     `;
                     card.onclick = () => { this.selectedBossId = b.id; this.renderSelectionCards(); };
@@ -856,6 +874,9 @@
 
                 document.getElementById('hud-player-name').innerText = cData.name.toUpperCase();
                 document.getElementById('hud-player-name').style.color = cData.color;
+                document.getElementById('hud-boss-name').innerText = bData.name.toUpperCase();
+                document.getElementById('hud-boss-name').style.color = bData.color;
+
                 document.getElementById('skill-1-name').innerText = cData.skill1Name;
                 document.getElementById('skill-2-name').innerText = cData.skill2Name;
 
@@ -875,8 +896,8 @@
                 if (playerWon) {
                     title.innerText = "CHIẾN THẮNG!";
                     desc.innerText = `Bạn đã chinh phục thành công Boss ${this.boss.data.name}!`;
-                    if (this.boss.data.id === 'lord') {
-                        Storage.unlockKnight();
+                    Storage.unlockKnight(this.boss.data.id);
+                    if (Storage.data.unlockedKnight) {
                         desc.innerText += " [ĐÃ MỞ KHÓA KNIGHT!]";
                     }
                 } else {
@@ -914,7 +935,6 @@
             update(dt) {
                 if (!this.player || !this.boss) return;
 
-                // Screen shake timer update
                 if (this.shakeTimer > 0) {
                     this.shakeTimer -= dt;
                     if (this.shakeTimer <= 0) {
@@ -958,6 +978,9 @@
                 } else if (this.player.data.id === 'cowboy') {
                     extraText += ` | Đạn: ${this.player.ammo}/6 ${this.player.isReloading ? '(Đang nạp...)' : ''}`;
                 }
+                if (this.player.burnTimer > 0) {
+                    extraText += ` | 🔥 THIÊU ĐỐT (${this.player.burnTimer.toFixed(1)}s)`;
+                }
                 document.getElementById('player-extra-stat').innerText = extraText;
 
                 const bHpPct = Math.max(0, (this.boss.hp / this.boss.maxHp) * 100);
@@ -984,7 +1007,6 @@
 
                 this.ctx.save();
 
-                // Apply Screen Shake transform if active
                 if (this.shakeTimer > 0) {
                     const rx = (Math.random() - 0.5) * 2 * this.shakeIntensity;
                     const ry = (Math.random() - 0.5) * 2 * this.shakeIntensity;
@@ -1048,7 +1070,6 @@
                 this.immuneTimer = 0;
                 this.dashCdTimer = 0;
 
-                // Standard Dash attributes
                 this.isDashing = false;
                 this.dashTimer = 0;
                 this.dashVx = 0;
@@ -1060,6 +1081,10 @@
 
                 this.isStunned = false; this.stunTimer = 0;
 
+                // Burn Effect Properties
+                this.burnTimer = 0;
+                this.burnDmgTimer = 0;
+
                 if (data.id === 'ninja') {
                     this.maxDashCharges = 3; this.dashCharges = 3; this.dashChargeTimer = 0;
                     this.afterimages = [];
@@ -1068,11 +1093,15 @@
                     this.huntingHourBuff = 0;
                 } else if (data.id === 'knight') {
                     this.isShieldActive = false;
-                    this.shieldTimer = 0; // Fix lỗi bằng đếm thời gian khiên chuẩn
+                    this.shieldTimer = 0;
                     this.isCastingJustice = false;
                     this.justiceCastTimer = 0;
                     this.targetAngle = 0;
                 }
+            }
+
+            applyBurn(duration = 5) {
+                this.burnTimer = duration; // Không cộng dồn, chỉ làm mới thời gian 5s
             }
 
             update(dt) {
@@ -1081,7 +1110,23 @@
                 if (this.skill2CdTimer > 0) this.skill2CdTimer -= dt;
                 if (this.basicAttackTimer > 0) this.basicAttackTimer -= dt;
 
-                // FIX LỖI KNIGHT BẤT TỬ: Quản lý thời gian Shield riêng biệt trong update
+                // Quản lý Thiêu Đốt (Nội tại của Dragon King)
+                if (this.burnTimer > 0) {
+                    this.burnTimer -= dt;
+                    this.burnDmgTimer += dt;
+                    if (this.burnDmgTimer >= 1.0) {
+                        this.burnDmgTimer = 0;
+                        if (!this.isImmune) {
+                            const burnDmg = Math.max(1, this.maxHp * 0.01); // 1% Máu tối đa mỗi 1s
+                            this.hp -= burnDmg;
+                            GameApp.addFloatingText(`-${Math.ceil(burnDmg)} 🔥`, this.x + (Math.random()*20-10), this.y - 20, '#f97316', 15);
+                            if (this.hp <= 0) { this.hp = 0; GameApp.endMatch(false); }
+                        }
+                    }
+                } else {
+                    this.burnDmgTimer = 0;
+                }
+
                 if (this.data.id === 'knight' && this.shieldTimer > 0) {
                     this.shieldTimer -= dt;
                     if (this.shieldTimer <= 0) {
@@ -1145,7 +1190,6 @@
                     }
                 }
 
-                // Handle standard Dash movement (for Cowboy / Knight)
                 if (this.isDashing) {
                     this.dashTimer -= dt;
                     this.x += this.dashVx * dt;
@@ -1158,7 +1202,6 @@
                     return;
                 }
 
-                // Normal Movement
                 let dx = 0, dy = 0;
                 if (GameApp.keys['w'] || GameApp.keys['arrowup']) dy -= 1;
                 if (GameApp.keys['s'] || GameApp.keys['arrowdown']) dy += 1;
@@ -1194,7 +1237,6 @@
                 }
             }
 
-            // Ninja: Instant Teleport Blink
             performNinjaBlink() {
                 const oldX = this.x;
                 const oldY = this.y;
@@ -1229,7 +1271,6 @@
                 GameApp.addFloatingText('BLINK!', this.x, this.y - 25, '#38bdf8', 16);
             }
 
-            // Cowboy & Knight: Moving Dash
             performStandardDash() {
                 let dx = 0, dy = 0;
                 if (GameApp.keys['w'] || GameApp.keys['arrowup']) dy -= 1;
@@ -1302,7 +1343,7 @@
                     this.skill1CdTimer = 15.0;
                     this.isShieldActive = true; 
                     this.isImmune = true; 
-                    this.shieldTimer = 5.0; // Sửa cách tính thời gian khiên chuẩn xác
+                    this.shieldTimer = 5.0;
                     GameApp.addFloatingText('SHIELD ACTIVE (5s)!', this.x, this.y - 25, '#38bdf8', 18);
                 }
             }
@@ -1332,7 +1373,7 @@
             }
 
             executeJusticeSlash() {
-                GameApp.triggerScreenShake(16, 0.4); // Rung màn hình khi chém đại chiêu
+                GameApp.triggerScreenShake(16, 0.4);
                 GameApp.projectiles.push(new SlashProjectile(
                     this.x, this.y, this.targetAngle, this.damage * 2.0, this, 'player', 240, 0.5, 2.0
                 ));
@@ -1376,7 +1417,7 @@
                 }
                 const finalDmg = Math.max(1, amount * (1 - this.dmgReduce / 100));
                 this.hp -= finalDmg;
-                GameApp.triggerScreenShake(8, 0.2); // Rung khi trúng đòn
+                GameApp.triggerScreenShake(8, 0.2);
                 GameApp.addFloatingText(`-${Math.ceil(finalDmg)}`, this.x, this.y - 20, '#ef4444');
                 if (this.hp <= 0) { this.hp = 0; GameApp.endMatch(false); }
             }
@@ -1406,6 +1447,14 @@
                     ctx.restore();
                 }
 
+                // Hiệu ứng vòng lửa khi bị thiêu đốt
+                if (this.burnTimer > 0) {
+                    ctx.save();
+                    ctx.strokeStyle = '#f97316'; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 6, 0, Math.PI * 2); ctx.stroke();
+                    ctx.restore();
+                }
+
                 const img = Assets.images[this.data.id];
                 if (Assets.loaded[this.data.id] && img) {
                     ctx.save();
@@ -1429,18 +1478,23 @@
                 this.speed = this.baseSpeed * 15;
                 this.damage = data.stats.damage;
                 this.dodge = data.stats.dodge;
+                this.dmgReduce = data.stats.dmgReduce || 0;
 
-                this.skill1Timer = 2.0;
-                this.skill2Timer = 7.0;
-                this.skill3Timer = 10.0;
+                this.skill1Timer = 3.0;
+                this.skill2Timer = 8.0;
+                this.skill3Timer = 5.0;
 
                 this.isStunned = false; this.stunTimer = 0;
 
-                // AI Di chuyển ngẫu nhiên & lượn lách
+                // AI Movement
                 this.moveTimer = 0;
                 this.moveAngleOffset = 0;
                 this.isChasing = true;
                 this.targetMoveAngle = 0;
+
+                // Dragon King Fire Breath state
+                this.isBreathingFire = false;
+                this.fireBreathTimer = 0;
             }
 
             update(dt) {
@@ -1453,21 +1507,24 @@
                 const player = GameApp.player;
                 if (!player) return;
 
-                const lostHp = this.maxHp - this.hp;
-                const stacks = Math.floor(lostHp / 50);
-                const currentSpeed = (this.baseSpeed + stacks * 5) * 15;
-                const currentDmg = this.damage + stacks * 5;
+                let currentSpeed = this.speed;
+                let currentDmg = this.damage;
 
-                // --- AI DI CHUYỂN BIẾN ẢO & NGẪU NHIÊN ---
+                if (this.data.id === 'lord') {
+                    const lostHp = this.maxHp - this.hp;
+                    const stacks = Math.floor(lostHp / 50);
+                    currentSpeed = (this.baseSpeed + stacks * 5) * 15;
+                    currentDmg = this.damage + stacks * 5;
+                }
+
+                // AI DI CHUYỂN BIẾN ẢO & NGẪU NHIÊN
                 this.moveTimer -= dt;
                 if (this.moveTimer <= 0) {
-                    this.moveTimer = 1.0 + Math.random() * 1.5; // Thay đổi hướng đi mỗi 1 - 2.5s
+                    this.moveTimer = 1.0 + Math.random() * 1.5;
                     if (Math.random() < 0.6) {
-                        // 60% Đuổi người chơi nhưng lượn lách (Strafe angle)
                         this.isChasing = true;
-                        this.moveAngleOffset = (Math.random() - 0.5) * (Math.PI / 2); // Đảo góc -45 đến +45 độ
+                        this.moveAngleOffset = (Math.random() - 0.5) * (Math.PI / 2);
                     } else {
-                        // 40% Đi ngẫu nhiên hướng khác làm rối mắt
                         this.isChasing = false;
                         this.targetMoveAngle = Math.random() * Math.PI * 2;
                     }
@@ -1487,45 +1544,117 @@
                 this.x += Math.cos(moveAngle) * currentSpeed * dt;
                 this.y += Math.sin(moveAngle) * currentSpeed * dt;
 
-                // Giữ Boss không bị ra khỏi màn hình
                 this.x = Math.max(this.radius, Math.min(GameApp.canvas.width - this.radius, this.x));
                 this.y = Math.max(this.radius, Math.min(GameApp.canvas.height - this.radius, this.y));
 
-                // Chiêu thức Boss
+                // --- QUẢN LÝ KỸ NĂNG THEO TỪNG BOSS ---
                 this.skill1Timer -= dt;
                 this.skill2Timer -= dt;
                 this.skill3Timer -= dt;
 
-                if (this.skill1Timer <= 0) {
-                    this.skill1Timer = 2.0;
-                    const angle = Math.atan2(player.y - this.y, player.x - this.x);
-                    for (let i = 0; i < 3; i++) {
-                        setTimeout(() => {
-                            GameApp.projectiles.push(new FireballProjectile(this.x, this.y, angle, currentDmg, this, 'boss', 550, 12));
-                        }, i * 180);
+                if (this.data.id === 'lord') {
+                    if (this.skill1Timer <= 0) {
+                        this.skill1Timer = 2.0;
+                        const angle = Math.atan2(player.y - this.y, player.x - this.x);
+                        for (let i = 0; i < 3; i++) {
+                            setTimeout(() => {
+                                GameApp.projectiles.push(new FireballProjectile(this.x, this.y, angle, currentDmg, this, 'boss', 550, 12));
+                            }, i * 180);
+                        }
                     }
-                }
 
-                if (this.skill2Timer <= 0) {
-                    this.skill2Timer = 7.0;
-                    GameApp.triggerScreenShake(12, 0.4); // Rung khi triệu hồi
-                    const cx = GameApp.canvas.width / 2, cy = GameApp.canvas.height / 2;
-                    GameApp.addFloatingText('LORD SUMMONS FIREBALLS!', this.x, this.y - 40, '#ef4444', 22);
-                    for (let i = 0; i < 5; i++) {
-                        GameApp.projectiles.push(new FireballProjectile(cx, cy, Math.random() * Math.PI * 2, currentDmg * 2.0, this, 'boss', 300, 32));
+                    if (this.skill2Timer <= 0) {
+                        this.skill2Timer = 7.0;
+                        GameApp.triggerScreenShake(12, 0.4);
+                        const cx = GameApp.canvas.width / 2, cy = GameApp.canvas.height / 2;
+                        GameApp.addFloatingText('LORD SUMMONS FIREBALLS!', this.x, this.y - 40, '#ef4444', 22);
+                        for (let i = 0; i < 5; i++) {
+                            GameApp.projectiles.push(new FireballProjectile(cx, cy, Math.random() * Math.PI * 2, currentDmg * 2.0, this, 'boss', 300, 32));
+                        }
                     }
-                }
 
-                if (this.skill3Timer <= 0) {
-                    this.skill3Timer = 10.0;
-                    GameApp.triggerScreenShake(22, 0.6); // Rung mạnh khi Boss gầm
-                    GameApp.addFloatingText('ROAR OF THE LORD!', this.x, this.y - 40, '#f97316', 24);
-                    if (GameApp.player) {
-                        GameApp.player.takeDamage(currentDmg * 0.5);
-                        GameApp.player.applyStun(2.5);
-                        const kAng = Math.atan2(GameApp.player.y - this.y, GameApp.player.x - this.x);
-                        GameApp.player.x += Math.cos(kAng) * 80;
-                        GameApp.player.y += Math.sin(kAng) * 80;
+                    if (this.skill3Timer <= 0) {
+                        this.skill3Timer = 10.0;
+                        GameApp.triggerScreenShake(22, 0.6);
+                        GameApp.addFloatingText('ROAR OF THE LORD!', this.x, this.y - 40, '#f97316', 24);
+                        if (GameApp.player) {
+                            GameApp.player.takeDamage(currentDmg * 0.5);
+                            GameApp.player.applyStun(2.5);
+                            const kAng = Math.atan2(GameApp.player.y - this.y, GameApp.player.x - this.x);
+                            GameApp.player.x += Math.cos(kAng) * 80;
+                            GameApp.player.y += Math.sin(kAng) * 80;
+                        }
+                    }
+                } else if (this.data.id === 'dragon') {
+                    // Dragon King Chiêu 1: Hỏa Lốc (10 lốc xoáy)
+                    if (this.skill1Timer <= 0) {
+                        this.skill1Timer = 15.0;
+                        GameApp.addFloatingText('DRAGON TORNADOES!', this.x, this.y - 40, '#f97316', 22);
+                        for (let i = 0; i < 10; i++) {
+                            const ang = (Math.PI * 2 / 10) * i + Math.random() * 0.5;
+                            GameApp.projectiles.push(new TornadoProjectile(this.x, this.y, ang, currentDmg * 0.5, this));
+                        }
+                    }
+
+                    // Dragon King Chiêu 2: Thiên Thạch (3 thiên thạch)
+                    if (this.skill2Timer <= 0) {
+                        this.skill2Timer = 20.0;
+                        GameApp.addFloatingText('METEORS FALLING!', this.x, this.y - 40, '#dc2626', 22);
+                        for (let i = 0; i < 3; i++) {
+                            const tx = Math.max(100, Math.min(GameApp.canvas.width - 100, player.x + (Math.random() - 0.5) * 400));
+                            const ty = Math.max(100, Math.min(GameApp.canvas.height - 100, player.y + (Math.random() - 0.5) * 400));
+                            GameApp.projectiles.push(new MeteorTarget(tx, ty, currentDmg * 2.0, this));
+                        }
+                    }
+
+                    // Dragon King Chiêu 3: Phun Lửa (Chỉ kích hoạt khi ở chế độ TRUY ĐỔI)
+                    if (this.skill3Timer <= 0 && this.isChasing) {
+                        this.skill3Timer = 10.0;
+                        this.isBreathingFire = true;
+                        this.fireBreathTimer = 2.5; // Phun lửa trong 2.5s
+                        GameApp.addFloatingText('DRAGON BREATH!', this.x, this.y - 40, '#ef4444', 24);
+                    }
+
+                    // Cập nhật trạng thái Phun Lửa
+                    if (this.isBreathingFire) {
+                        this.fireBreathTimer -= dt;
+                        const breathAngle = Math.atan2(player.y - this.y, player.x - this.x);
+                        const breathRange = 230;
+                        const coneHalfAngle = 0.5;
+
+                        // Tạo hạt lửa phun ra
+                        for (let i = 0; i < 4; i++) {
+                            const pAng = breathAngle + (Math.random() - 0.5) * coneHalfAngle * 2;
+                            const pSpd = 150 + Math.random() * 250;
+                            GameApp.particles.push({
+                                x: this.x + Math.cos(breathAngle) * 20,
+                                y: this.y + Math.sin(breathAngle) * 20,
+                                vx: Math.cos(pAng) * pSpd,
+                                vy: Math.sin(pAng) * pSpd,
+                                color: Math.random() < 0.5 ? '#f97316' : '#ef4444',
+                                size: 6 + Math.random() * 8,
+                                life: 0.4
+                            });
+                        }
+
+                        // Kiểm tra người chơi trong vùng nón phun lửa
+                        const distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
+                        if (distToPlayer <= breathRange + player.radius) {
+                            const angleToPlayer = Math.atan2(player.y - this.y, player.x - this.x);
+                            let diffAngle = Math.abs(angleToPlayer - breathAngle);
+                            while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
+                            diffAngle = Math.abs(diffAngle);
+
+                            if (diffAngle <= coneHalfAngle) {
+                                // Sát thương 30-50%/giây -> Tương đương ~40% sát thương x dt mỗi frame
+                                player.takeDamage(currentDmg * 0.4 * dt * 60);
+                                player.applyBurn(5); // Kích hoạt Nội tại Thiêu Đốt
+                            }
+                        }
+
+                        if (this.fireBreathTimer <= 0) {
+                            this.isBreathingFire = false;
+                        }
                     }
                 }
             }
@@ -1535,6 +1664,10 @@
                     GameApp.addFloatingText('BOSS DODGE', this.x, this.y - 30, '#34d399');
                     return;
                 }
+
+                // Tính toán Miễn thương
+                amount = amount * (1 - this.dmgReduce / 100);
+
                 let isCrit = false;
                 if (attacker && Math.random() * 100 < attacker.critRate) {
                     isCrit = true;
@@ -1542,7 +1675,7 @@
                 }
                 this.hp -= amount;
                 if (isCrit) {
-                    GameApp.triggerScreenShake(7, 0.2); // Rung màn hình khi chí mạng
+                    GameApp.triggerScreenShake(7, 0.2);
                     GameApp.addFloatingText(`CRIT! -${Math.ceil(amount)}`, this.x, this.y - 30, '#fbbf24', 24);
                 } else {
                     GameApp.addFloatingText(`-${Math.ceil(amount)}`, this.x, this.y - 30, '#f87171');
@@ -1558,6 +1691,21 @@
 
             draw(ctx) {
                 const angle = GameApp.player ? Math.atan2(GameApp.player.y - this.y, GameApp.player.x - this.x) : 0;
+
+                // Vẽ hình nón cảnh báo phun lửa nếu đang Phun Lửa
+                if (this.data.id === 'dragon' && this.isBreathingFire) {
+                    ctx.save();
+                    ctx.translate(this.x, this.y);
+                    ctx.rotate(angle);
+                    ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+                    ctx.beginPath();
+                    ctx.moveTo(0, 0);
+                    ctx.arc(0, 0, 230, -0.5, 0.5);
+                    ctx.closePath();
+                    ctx.fill();
+                    ctx.restore();
+                }
+
                 const img = Assets.images[this.data.id];
 
                 if (Assets.loaded[this.data.id] && img) {
@@ -1696,6 +1844,7 @@
                 if (this.faction === 'boss' && GameApp.player) {
                     if (Math.hypot(GameApp.player.x - this.x, GameApp.player.y - this.y) < GameApp.player.radius + this.radius) {
                         GameApp.player.takeDamage(this.damage);
+                        if (this.owner.data.id === 'dragon') GameApp.player.applyBurn(5);
                         this.destroyed = true;
                     }
                 }
@@ -1705,6 +1854,112 @@
                 ctx.save();
                 ctx.fillStyle = '#ef4444';
                 ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Lốc xoáy lửa (Dragon King Chiêu 1)
+        class TornadoProjectile {
+            constructor(x, y, angle, damage, owner) {
+                this.x = x; this.y = y;
+                this.speed = 220;
+                this.vx = Math.cos(angle) * this.speed;
+                this.vy = Math.sin(angle) * this.speed;
+                this.damage = damage; this.owner = owner;
+                this.radius = 18; this.life = 5.0; this.destroyed = false;
+                this.rotation = 0;
+                this.changeDirTimer = 0;
+            }
+            update(dt) {
+                this.life -= dt;
+                if (this.life <= 0) { this.destroyed = true; return; }
+
+                this.rotation += 12 * dt;
+                this.changeDirTimer -= dt;
+                if (this.changeDirTimer <= 0) {
+                    this.changeDirTimer = 0.4 + Math.random() * 0.6;
+                    const curAngle = Math.atan2(this.vy, this.vx) + (Math.random() - 0.5) * 1.2;
+                    this.vx = Math.cos(curAngle) * this.speed;
+                    this.vy = Math.sin(curAngle) * this.speed;
+                }
+
+                this.x += this.vx * dt;
+                this.y += this.vy * dt;
+
+                if (this.x < this.radius) { this.x = this.radius; this.vx *= -1; }
+                if (this.x > GameApp.canvas.width - this.radius) { this.x = GameApp.canvas.width - this.radius; this.vx *= -1; }
+                if (this.y < this.radius) { this.y = this.radius; this.vy *= -1; }
+                if (this.y > GameApp.canvas.height - this.radius) { this.y = GameApp.canvas.height - this.radius; this.vy *= -1; }
+
+                if (GameApp.player && Math.hypot(GameApp.player.x - this.x, GameApp.player.y - this.y) < GameApp.player.radius + this.radius) {
+                    GameApp.player.takeDamage(this.damage);
+                    GameApp.player.applyBurn(5);
+                    this.destroyed = true;
+                }
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.x, this.y);
+                ctx.rotate(this.rotation);
+                ctx.strokeStyle = '#f97316'; ctx.lineWidth = 4;
+                ctx.beginPath(); ctx.arc(0, 0, this.radius, 0, Math.PI * 1.5); ctx.stroke();
+                ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(0, 0, this.radius * 0.5, Math.PI * 0.5, Math.PI * 2); ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        // Thiên thạch rơi (Dragon King Chiêu 2)
+        class MeteorTarget {
+            constructor(x, y, damage, owner) {
+                this.x = x; this.y = y;
+                this.damage = damage; this.owner = owner;
+                this.delay = 1.2;
+                this.maxDelay = 1.2;
+                this.radius = 65;
+                this.destroyed = false;
+            }
+            update(dt) {
+                this.delay -= dt;
+                if (this.delay <= 0) {
+                    this.explode();
+                    this.destroyed = true;
+                }
+            }
+            explode() {
+                GameApp.triggerScreenShake(18, 0.4);
+
+                for (let i = 0; i < 20; i++) {
+                    const ang = Math.random() * Math.PI * 2;
+                    const spd = 100 + Math.random() * 250;
+                    GameApp.particles.push({
+                        x: this.x, y: this.y,
+                        vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd,
+                        color: '#f97316', size: 4 + Math.random() * 4, life: 0.5
+                    });
+                }
+
+                if (GameApp.player && Math.hypot(GameApp.player.x - this.x, GameApp.player.y - this.y) < GameApp.player.radius + this.radius) {
+                    GameApp.player.takeDamage(this.damage);
+                    GameApp.player.applyBurn(5);
+                }
+
+                const baseAngle = Math.random() * Math.PI * 2;
+                for (let i = 0; i < 5; i++) {
+                    const ang = baseAngle + (Math.PI * 2 / 5) * i;
+                    GameApp.projectiles.push(new FireballProjectile(this.x, this.y, ang, this.owner.damage * 0.3, this.owner, 'boss', 450, 10));
+                }
+            }
+            draw(ctx) {
+                ctx.save();
+                const progress = Math.min(1, 1 - (this.delay / this.maxDelay));
+
+                ctx.strokeStyle = '#ef4444'; ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2); ctx.stroke();
+
+                ctx.fillStyle = 'rgba(239, 68, 68, 0.3)';
+                ctx.beginPath(); ctx.arc(this.x, this.y, this.radius * progress, 0, Math.PI * 2); ctx.fill();
+
                 ctx.restore();
             }
         }
