@@ -235,7 +235,7 @@
             font-weight: bold;
         }
 
-        /* Modernized Beautiful Wiki UI */
+        /* Wiki UI */
         .modal-body {
             background: rgba(20, 24, 35, 0.95);
             border: 1px solid rgba(255, 255, 255, 0.15);
@@ -319,7 +319,7 @@
             margin-right: 6px;
         }
 
-        /* HUD Overlay */
+        /* HUD Layer */
         #hud-layer {
             position: absolute;
             top: 0;
@@ -464,13 +464,13 @@
 
             <div class="hud-bottom">
                 <div class="controls-tip">
-                    <b>Di chuyển:</b> WASD | <b>Lướt/Dịch chuyển:</b> Q (Immune) | <b>Đánh thường:</b> Chuột Trái | <b>Chiêu 1:</b> 1 / E | <b>Chiêu 2:</b> 2 / R
+                    <b>Di chuyển:</b> WASD | <b id="hud-move-action-name">Dịch chuyển / Lướt:</b> Q (Immune) | <b>Đánh thường:</b> Chuột Trái | <b>Chiêu 1:</b> 1 / E | <b>Chiêu 2:</b> 2 / R
                 </div>
 
                 <div class="skills-hud">
                     <div class="skill-icon">
                         <span class="key-bind">Q</span>
-                        <span style="font-size: 0.75rem;">Lướt</span>
+                        <span style="font-size: 0.7rem;" id="skill-q-label">Blink</span>
                         <div id="cd-dash" class="skill-cd-overlay hidden">0s</div>
                     </div>
                     <div class="skill-icon">
@@ -536,12 +536,9 @@
                 <h2 style="color:#ff4b2b; margin-bottom:15px;">NHẬT KÝ SỬA ĐỔI (CHANGE LOGS)</h2>
                 <div class="wiki-card">
                     <div>
-                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.2.0 (Mới Nhất)</h4>
+                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.2.1</h4>
                         <ul style="margin-left:20px; line-height: 1.6; color:#cbd5e1; font-size:0.9rem;">
-                            <li><b>Knight Skill 2:</b> Thêm vùng Cảnh báo Phạm vi Chiêu (Telegraph Zone) phát sáng đỏ/vàng chiếu trực tiếp khi Knight đang vận chiêu.</li>
-                            <li><b>Ninja Dash:</b> Nâng cấp Lướt thành Dịch chuyển Tức thời (Blink) qua không gian kèm chuỗi Dư ảnh.</li>
-                            <li><b>UI & Wiki:</b> Đổi mới giao diện Wiki phân tab khoa học, thẩm mỹ cao.</li>
-                            <li><b>Avatar System:</b> Load mượt mà tệp PNG từ `bossrush/` và tự động hiển thị Placeholder chất lượng cao khi thiếu ảnh.</li>
+                            <li><b>Phân định Blink & Dash:</b> Ninja sở hữu kỹ năng <i>Dịch chuyển tức thời (Blink)</i> cao cấp qua không gian. Cowboy và Knight dùng kỹ năng <i>Lướt (Dash)</i> lao nhanh có hướng và thời gian cooldown.</li>
                         </ul>
                     </div>
                 </div>
@@ -561,9 +558,6 @@
     </div>
 
     <script>
-        /* ==========================================================================
-           ASSET MANAGER & LOCAL STORAGE
-           ========================================================================== */
         const Assets = {
             images: {},
             loaded: {},
@@ -626,21 +620,18 @@
         };
         Storage.load();
 
-        /* ==========================================================================
-           CHARACTER & BOSS DATA
-           ========================================================================== */
         const CHARACTERS = {
             ninja: {
                 id: 'ninja', name: 'Ninja', color: '#3b82f6', unlocked: true,
-                desc: 'Nhanh nhẹn, dịch chuyển tức thời 3 lần, tung chém gió & phi tiêu đuổi.',
+                desc: 'Nhanh nhẹn, dịch chuyển tức thời 3 lần qua không gian, tung chém gió & phi tiêu đuổi.',
                 stats: { hp: 100, speed: 12, damage: 15, dodge: 10, critRate: 5, critDmg: 200, range: 45 },
-                passiveName: 'Dư Ảnh', passiveDesc: 'Tích trữ được 3 lần Lướt/Dịch chuyển tức thời, tạo dư ảnh ảo.',
+                passiveName: 'Dư Ảnh', passiveDesc: 'Tích trữ 3 lần Dịch Chuyển Tức Thời (Blink), tạo dư ảnh ảo khi biến mất.',
                 skill1Name: 'Chém Gió', skill1Desc: 'Phóng 3 vết chém bay về hướng chuột (75% sát thương, hồi 5s).',
                 skill2Name: 'Phi Tiêu', skill2Desc: 'Triệu hồi 5 phi tiêu xung quanh tự tìm diệt boss (75% sát thương/tiêu, hồi 10s).'
             },
             cowboy: {
                 id: 'cowboy', name: 'Cowboy', color: '#d97706', unlocked: true,
-                desc: 'Sạ thủ tầm xa dùng súng Revolver 6 viên đạn, bão đạn bán nguyệt.',
+                desc: 'Sạ thủ tầm xa dùng súng Revolver 6 viên đạn, bão đạn bán nguyệt và lướt né đòn.',
                 stats: { hp: 75, speed: 8, damage: 10, dodge: 0, critRate: 10, critDmg: 250, range: 400 },
                 passiveName: 'Revolver', passiveDesc: 'Súng 6 viên đạn. Bắn hết nạp trong 3s, dừng bắn 1.5s tự hồi đạn.',
                 skill1Name: 'Bão Đạn', skill1Desc: 'Bắn 6 viên đạn hình bán nguyệt (125% sát thương/viên, hồi 10s).',
@@ -649,7 +640,7 @@
             knight: {
                 id: 'knight', name: 'Knight', color: '#64748b',
                 get unlocked() { return Storage.data.unlockedKnight; },
-                desc: 'Hiệp sĩ giáp sắt, miễn thương với khiên và chém kiếm khổng lồ gây choáng.',
+                desc: 'Hiệp sĩ giáp sắt, lướt áp sát, khiên chặn đòn và chém kiếm khổng lồ gây choáng.',
                 stats: { hp: 200, speed: 5, damage: 50, dodge: 0, critRate: 0, critDmg: 200, range: 60, dmgReduce: 5 },
                 passiveName: 'Vỡ Giáp', passiveDesc: 'Máu dưới 50% sẽ tăng tốc độ di chuyển lên thành 10.',
                 skill1Name: 'Khiên Vững Chắc', skill1Desc: 'Dùng khiên chặn đòn, miễn thương (Immune) trong 5s (hồi 15s).',
@@ -668,9 +659,6 @@
             }
         };
 
-        /* ==========================================================================
-           MAIN GAME ENGINE
-           ========================================================================== */
         const GameApp = {
             canvas: null, ctx: null,
             selectedCharId: 'ninja', selectedBossId: 'lord',
@@ -739,7 +727,6 @@
             },
 
             renderSelectionCards() {
-                // Character cards
                 const charContainer = document.getElementById('char-card-container');
                 charContainer.innerHTML = '';
                 Object.values(CHARACTERS).forEach(c => {
@@ -765,7 +752,6 @@
                     this.renderAvatarBox(document.getElementById(`avatar-box-${c.id}`), c.id, c.color);
                 });
 
-                // Boss cards
                 const bossContainer = document.getElementById('boss-card-container');
                 bossContainer.innerHTML = '';
                 Object.values(BOSSES).forEach(b => {
@@ -833,7 +819,6 @@
                 }
                 box.innerHTML = html;
 
-                // Render avatars for wiki
                 if (this.currentWikiTab === 'chars') {
                     Object.values(CHARACTERS).forEach(c => {
                         this.renderAvatarBox(document.getElementById(`wiki-avatar-${c.id}`), c.id, c.color);
@@ -860,6 +845,10 @@
                 document.getElementById('hud-player-name').style.color = cData.color;
                 document.getElementById('skill-1-name').innerText = cData.skill1Name;
                 document.getElementById('skill-2-name').innerText = cData.skill2Name;
+
+                const qLabel = (cData.id === 'ninja') ? 'Blink' : 'Lướt';
+                document.getElementById('skill-q-label').innerText = qLabel;
+                document.getElementById('hud-move-action-name').innerText = (cData.id === 'ninja') ? 'Dịch chuyển (Blink):' : 'Lướt (Dash):';
 
                 this.showScreen('hud');
                 this.isRunning = true;
@@ -942,7 +931,7 @@
 
                 let extraText = `Tốc độ: ${Math.round(this.player.speed / 28)}`;
                 if (this.player.data.id === 'ninja') {
-                    extraText += ` | Tích Lướt: ${this.player.dashCharges}/${this.player.maxDashCharges}`;
+                    extraText += ` | Blink: ${this.player.dashCharges}/${this.player.maxDashCharges}`;
                 } else if (this.player.data.id === 'cowboy') {
                     extraText += ` | Đạn: ${this.player.ammo}/6 ${this.player.isReloading ? '(Đang nạp...)' : ''}`;
                 }
@@ -970,7 +959,6 @@
             render() {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-                // Grid background
                 this.ctx.strokeStyle = 'rgba(255,255,255,0.03)';
                 this.ctx.lineWidth = 1;
                 for (let x = 0; x < this.canvas.width; x += 60) {
@@ -980,7 +968,6 @@
                     this.ctx.beginPath(); this.ctx.moveTo(0, y); this.ctx.lineTo(this.canvas.width, y); this.ctx.stroke();
                 }
 
-                // Telegraph Area for Knight Skill 2
                 if (this.player && this.player.isCastingJustice) {
                     this.player.drawKnightTelegraph(this.ctx);
                 }
@@ -1008,9 +995,6 @@
             }
         };
 
-        /* ==========================================================================
-           PLAYER ENTITY CLASS
-           ========================================================================== */
         class PlayerEntity {
             constructor(data, x, y) {
                 this.data = data;
@@ -1029,6 +1013,12 @@
                 this.isImmune = false;
                 this.immuneTimer = 0;
                 this.dashCdTimer = 0;
+
+                // Standard Dash attributes
+                this.isDashing = false;
+                this.dashTimer = 0;
+                this.dashVx = 0;
+                this.dashVy = 0;
 
                 this.skill1CdTimer = 0;
                 this.skill2CdTimer = 0;
@@ -1067,7 +1057,6 @@
                     return;
                 }
 
-                // Ninja Afterimage decay
                 if (this.data.id === 'ninja' && this.afterimages) {
                     for (let i = this.afterimages.length - 1; i >= 0; i--) {
                         this.afterimages[i].alpha -= dt * 2.5;
@@ -1106,11 +1095,24 @@
                             this.isCastingJustice = false;
                             this.executeJusticeSlash();
                         }
-                        return; // Freeze movement during casting
+                        return;
                     }
                 }
 
-                // Movement
+                // Handle standard Dash movement (for Cowboy / Knight)
+                if (this.isDashing) {
+                    this.dashTimer -= dt;
+                    this.x += this.dashVx * dt;
+                    this.y += this.dashVy * dt;
+                    this.x = Math.max(this.radius, Math.min(GameApp.canvas.width - this.radius, this.x));
+                    this.y = Math.max(this.radius, Math.min(GameApp.canvas.height - this.radius, this.y));
+                    if (this.dashTimer <= 0) {
+                        this.isDashing = false;
+                    }
+                    return;
+                }
+
+                // Normal Movement
                 let dx = 0, dy = 0;
                 if (GameApp.keys['w'] || GameApp.keys['arrowup']) dy -= 1;
                 if (GameApp.keys['s'] || GameApp.keys['arrowdown']) dy += 1;
@@ -1140,13 +1142,13 @@
                     }
                 } else {
                     if (this.dashCdTimer <= 0) {
-                        this.dashCdTimer = 5.0;
+                        this.dashCdTimer = 4.0;
                         this.performStandardDash();
                     }
                 }
             }
 
-            // Ninja Instant Teleport Blink
+            // Ninja: Instant Teleport Blink
             performNinjaBlink() {
                 const oldX = this.x;
                 const oldY = this.y;
@@ -1160,14 +1162,13 @@
                 let angle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
                 if (dx !== 0 || dy !== 0) angle = Math.atan2(dy, dx);
 
-                const blinkDist = 240;
+                const blinkDist = 260;
                 this.x += Math.cos(angle) * blinkDist;
                 this.y += Math.sin(angle) * blinkDist;
 
                 this.x = Math.max(this.radius, Math.min(GameApp.canvas.width - this.radius, this.x));
                 this.y = Math.max(this.radius, Math.min(GameApp.canvas.height - this.radius, this.y));
 
-                // Spawn Afterimages along path
                 for (let i = 0; i <= 4; i++) {
                     const ratio = i / 4;
                     this.afterimages.push({
@@ -1178,14 +1179,30 @@
                 }
 
                 this.isImmune = true;
-                this.immuneTimer = 0.6;
+                this.immuneTimer = 0.5;
                 GameApp.addFloatingText('BLINK!', this.x, this.y - 25, '#38bdf8', 16);
             }
 
+            // Cowboy & Knight: Moving Dash
             performStandardDash() {
+                let dx = 0, dy = 0;
+                if (GameApp.keys['w'] || GameApp.keys['arrowup']) dy -= 1;
+                if (GameApp.keys['s'] || GameApp.keys['arrowdown']) dy += 1;
+                if (GameApp.keys['a'] || GameApp.keys['arrowleft']) dx -= 1;
+                if (GameApp.keys['d'] || GameApp.keys['arrowright']) dx += 1;
+
+                let angle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
+                if (dx !== 0 || dy !== 0) angle = Math.atan2(dy, dx);
+
+                const dashSpeed = 650;
+                this.dashVx = Math.cos(angle) * dashSpeed;
+                this.dashVy = Math.sin(angle) * dashSpeed;
+                this.dashTimer = 0.25; // 0.25s duration dash
+                this.isDashing = true;
+
                 this.isImmune = true;
-                this.immuneTimer = 0.6;
-                GameApp.addFloatingText('IMMUNE DASH!', this.x, this.y - 25, '#38bdf8', 16);
+                this.immuneTimer = 0.4;
+                GameApp.addFloatingText('DASH!', this.x, this.y - 25, '#f59e0b', 16);
             }
 
             basicAttack() {
@@ -1280,7 +1297,6 @@
 
                 const fillRatio = (2.0 - this.justiceCastTimer) / 2.0;
                 
-                // Telegraph Arc/Sector
                 ctx.fillStyle = 'rgba(239, 68, 68, 0.2)';
                 ctx.strokeStyle = '#ef4444';
                 ctx.lineWidth = 2;
@@ -1291,7 +1307,6 @@
                 ctx.fill();
                 ctx.stroke();
 
-                // Fill progress
                 ctx.fillStyle = 'rgba(251, 191, 36, 0.4)';
                 ctx.beginPath();
                 ctx.moveTo(0, 0);
@@ -1326,7 +1341,6 @@
             draw(ctx) {
                 const angle = Math.atan2(GameApp.mousePos.y - this.y, GameApp.mousePos.x - this.x);
 
-                // Ninja Afterimages
                 if (this.data.id === 'ninja' && this.afterimages) {
                     this.afterimages.forEach(img => {
                         ctx.save();
@@ -1356,9 +1370,6 @@
             }
         }
 
-        /* ==========================================================================
-           BOSS ENTITY CLASS
-           ========================================================================== */
         class BossEntity {
             constructor(data, x, y) {
                 this.data = data;
@@ -1475,9 +1486,6 @@
             }
         }
 
-        /* ==========================================================================
-           PROJECTILES
-           ========================================================================== */
         class BulletProjectile {
             constructor(x, y, angle, damage, owner, faction, speed = 700) {
                 this.x = x; this.y = y;
