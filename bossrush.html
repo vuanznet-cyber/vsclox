@@ -536,9 +536,11 @@
                 <h2 style="color:#ff4b2b; margin-bottom:15px;">NHẬT KÝ SỬA ĐỔI (CHANGE LOGS)</h2>
                 <div class="wiki-card">
                     <div>
-                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.2.1</h4>
+                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.3.0</h4>
                         <ul style="margin-left:20px; line-height: 1.6; color:#cbd5e1; font-size:0.9rem;">
-                            <li><b>Phân định Blink & Dash:</b> Ninja sở hữu kỹ năng <i>Dịch chuyển tức thời (Blink)</i> cao cấp qua không gian. Cowboy và Knight dùng kỹ năng <i>Lướt (Dash)</i> lao nhanh có hướng và thời gian cooldown.</li>
+                            <li><b>Fix lỗi Bất tử vĩnh viễn:</b> Khắc phục hoàn toàn lỗi Knight bị bất tử vĩnh viễn sau khi dùng Chiêu 1.</li>
+                            <li><b>Nâng cấp AI Boss:</b> Boss di chuyển thông minh hơn, liên tục đảo hướng lượn lách và chạy ngẫu nhiên làm tăng độ khó khi ngắm bắn.</li>
+                            <li><b>Thêm Hiệu ứng Rung Màn Hình (Screen Shake):</b> Đưa hiệu ứng rung chấn chân thực vào các kỹ năng uy lực, đòn gầm toàn map và chí mạng.</li>
                         </ul>
                     </div>
                 </div>
@@ -631,7 +633,7 @@
             },
             cowboy: {
                 id: 'cowboy', name: 'Cowboy', color: '#d97706', unlocked: true,
-                desc: 'Sạ thủ tầm xa dùng súng Revolver 6 viên đạn, bão đạn bán nguyệt và lướt né đòn.',
+                desc: 'Xạ thủ tầm xa dùng súng Revolver 6 viên đạn, bão đạn bán nguyệt và lướt né đòn.',
                 stats: { hp: 75, speed: 8, damage: 10, dodge: 0, critRate: 10, critDmg: 250, range: 400 },
                 passiveName: 'Revolver', passiveDesc: 'Súng 6 viên đạn. Bắn hết nạp trong 3s, dừng bắn 1.5s tự hồi đạn.',
                 skill1Name: 'Bão Đạn', skill1Desc: 'Bắn 6 viên đạn hình bán nguyệt (125% sát thương/viên, hồi 10s).',
@@ -666,6 +668,10 @@
             player: null, boss: null, projectiles: [], particles: [], floatingTexts: [],
             currentWikiTab: 'chars',
 
+            // Screen Shake System
+            shakeTimer: 0,
+            shakeIntensity: 0,
+
             init() {
                 this.canvas = document.getElementById('gameCanvas');
                 this.ctx = this.canvas.getContext('2d');
@@ -692,6 +698,11 @@
                     requestAnimationFrame(loop);
                 };
                 requestAnimationFrame(loop);
+            },
+
+            triggerScreenShake(intensity = 10, duration = 0.3) {
+                this.shakeIntensity = intensity;
+                this.shakeTimer = duration;
             },
 
             resizeCanvas() {
@@ -834,6 +845,8 @@
                 this.projectiles = [];
                 this.particles = [];
                 this.floatingTexts = [];
+                this.shakeTimer = 0;
+                this.shakeIntensity = 0;
 
                 const cData = CHARACTERS[this.selectedCharId];
                 const bData = BOSSES[this.selectedBossId];
@@ -900,6 +913,16 @@
 
             update(dt) {
                 if (!this.player || !this.boss) return;
+
+                // Screen shake timer update
+                if (this.shakeTimer > 0) {
+                    this.shakeTimer -= dt;
+                    if (this.shakeTimer <= 0) {
+                        this.shakeTimer = 0;
+                        this.shakeIntensity = 0;
+                    }
+                }
+
                 this.player.update(dt);
                 this.boss.update(dt);
 
@@ -959,6 +982,15 @@
             render() {
                 this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
+                this.ctx.save();
+
+                // Apply Screen Shake transform if active
+                if (this.shakeTimer > 0) {
+                    const rx = (Math.random() - 0.5) * 2 * this.shakeIntensity;
+                    const ry = (Math.random() - 0.5) * 2 * this.shakeIntensity;
+                    this.ctx.translate(rx, ry);
+                }
+
                 this.ctx.strokeStyle = 'rgba(255,255,255,0.03)';
                 this.ctx.lineWidth = 1;
                 for (let x = 0; x < this.canvas.width; x += 60) {
@@ -992,6 +1024,8 @@
                     this.ctx.fillText(ft.text, ft.x, ft.y);
                     this.ctx.restore();
                 });
+
+                this.ctx.restore();
             }
         };
 
@@ -1034,6 +1068,7 @@
                     this.huntingHourBuff = 0;
                 } else if (data.id === 'knight') {
                     this.isShieldActive = false;
+                    this.shieldTimer = 0; // Fix lỗi bằng đếm thời gian khiên chuẩn
                     this.isCastingJustice = false;
                     this.justiceCastTimer = 0;
                     this.targetAngle = 0;
@@ -1046,9 +1081,20 @@
                 if (this.skill2CdTimer > 0) this.skill2CdTimer -= dt;
                 if (this.basicAttackTimer > 0) this.basicAttackTimer -= dt;
 
+                // FIX LỖI KNIGHT BẤT TỬ: Quản lý thời gian Shield riêng biệt trong update
+                if (this.data.id === 'knight' && this.shieldTimer > 0) {
+                    this.shieldTimer -= dt;
+                    if (this.shieldTimer <= 0) {
+                        this.isShieldActive = false;
+                        this.isImmune = false;
+                    }
+                }
+
                 if (this.immuneTimer > 0) {
                     this.immuneTimer -= dt;
-                    if (this.immuneTimer <= 0 && !this.isShieldActive) this.isImmune = false;
+                    if (this.immuneTimer <= 0 && !this.isShieldActive) {
+                        this.isImmune = false;
+                    }
                 }
 
                 if (this.stunTimer > 0) {
@@ -1197,7 +1243,7 @@
                 const dashSpeed = 650;
                 this.dashVx = Math.cos(angle) * dashSpeed;
                 this.dashVy = Math.sin(angle) * dashSpeed;
-                this.dashTimer = 0.25; // 0.25s duration dash
+                this.dashTimer = 0.25;
                 this.isDashing = true;
 
                 this.isImmune = true;
@@ -1254,9 +1300,10 @@
                     });
                 } else if (this.data.id === 'knight') {
                     this.skill1CdTimer = 15.0;
-                    this.isShieldActive = true; this.isImmune = true; this.immuneTimer = 5.0;
+                    this.isShieldActive = true; 
+                    this.isImmune = true; 
+                    this.shieldTimer = 5.0; // Sửa cách tính thời gian khiên chuẩn xác
                     GameApp.addFloatingText('SHIELD ACTIVE (5s)!', this.x, this.y - 25, '#38bdf8', 18);
-                    setTimeout(() => { this.isShieldActive = false; }, 5000);
                 }
             }
 
@@ -1285,6 +1332,7 @@
             }
 
             executeJusticeSlash() {
+                GameApp.triggerScreenShake(16, 0.4); // Rung màn hình khi chém đại chiêu
                 GameApp.projectiles.push(new SlashProjectile(
                     this.x, this.y, this.targetAngle, this.damage * 2.0, this, 'player', 240, 0.5, 2.0
                 ));
@@ -1328,6 +1376,7 @@
                 }
                 const finalDmg = Math.max(1, amount * (1 - this.dmgReduce / 100));
                 this.hp -= finalDmg;
+                GameApp.triggerScreenShake(8, 0.2); // Rung khi trúng đòn
                 GameApp.addFloatingText(`-${Math.ceil(finalDmg)}`, this.x, this.y - 20, '#ef4444');
                 if (this.hp <= 0) { this.hp = 0; GameApp.endMatch(false); }
             }
@@ -1386,6 +1435,12 @@
                 this.skill3Timer = 10.0;
 
                 this.isStunned = false; this.stunTimer = 0;
+
+                // AI Di chuyển ngẫu nhiên & lượn lách
+                this.moveTimer = 0;
+                this.moveAngleOffset = 0;
+                this.isChasing = true;
+                this.targetMoveAngle = 0;
             }
 
             update(dt) {
@@ -1403,15 +1458,40 @@
                 const currentSpeed = (this.baseSpeed + stacks * 5) * 15;
                 const currentDmg = this.damage + stacks * 5;
 
-                const dx = player.x - this.x;
-                const dy = player.y - this.y;
-                const dist = Math.hypot(dx, dy);
-
-                if (dist > 120) {
-                    this.x += (dx / dist) * currentSpeed * dt;
-                    this.y += (dy / dist) * currentSpeed * dt;
+                // --- AI DI CHUYỂN BIẾN ẢO & NGẪU NHIÊN ---
+                this.moveTimer -= dt;
+                if (this.moveTimer <= 0) {
+                    this.moveTimer = 1.0 + Math.random() * 1.5; // Thay đổi hướng đi mỗi 1 - 2.5s
+                    if (Math.random() < 0.6) {
+                        // 60% Đuổi người chơi nhưng lượn lách (Strafe angle)
+                        this.isChasing = true;
+                        this.moveAngleOffset = (Math.random() - 0.5) * (Math.PI / 2); // Đảo góc -45 đến +45 độ
+                    } else {
+                        // 40% Đi ngẫu nhiên hướng khác làm rối mắt
+                        this.isChasing = false;
+                        this.targetMoveAngle = Math.random() * Math.PI * 2;
+                    }
                 }
 
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                let moveAngle = 0;
+
+                if (this.isChasing) {
+                    const directAngle = Math.atan2(dy, dx);
+                    moveAngle = directAngle + this.moveAngleOffset;
+                } else {
+                    moveAngle = this.targetMoveAngle;
+                }
+
+                this.x += Math.cos(moveAngle) * currentSpeed * dt;
+                this.y += Math.sin(moveAngle) * currentSpeed * dt;
+
+                // Giữ Boss không bị ra khỏi màn hình
+                this.x = Math.max(this.radius, Math.min(GameApp.canvas.width - this.radius, this.x));
+                this.y = Math.max(this.radius, Math.min(GameApp.canvas.height - this.radius, this.y));
+
+                // Chiêu thức Boss
                 this.skill1Timer -= dt;
                 this.skill2Timer -= dt;
                 this.skill3Timer -= dt;
@@ -1428,6 +1508,7 @@
 
                 if (this.skill2Timer <= 0) {
                     this.skill2Timer = 7.0;
+                    GameApp.triggerScreenShake(12, 0.4); // Rung khi triệu hồi
                     const cx = GameApp.canvas.width / 2, cy = GameApp.canvas.height / 2;
                     GameApp.addFloatingText('LORD SUMMONS FIREBALLS!', this.x, this.y - 40, '#ef4444', 22);
                     for (let i = 0; i < 5; i++) {
@@ -1437,6 +1518,7 @@
 
                 if (this.skill3Timer <= 0) {
                     this.skill3Timer = 10.0;
+                    GameApp.triggerScreenShake(22, 0.6); // Rung mạnh khi Boss gầm
                     GameApp.addFloatingText('ROAR OF THE LORD!', this.x, this.y - 40, '#f97316', 24);
                     if (GameApp.player) {
                         GameApp.player.takeDamage(currentDmg * 0.5);
@@ -1459,8 +1541,12 @@
                     amount *= (attacker.critDmg / 100);
                 }
                 this.hp -= amount;
-                if (isCrit) GameApp.addFloatingText(`CRIT! -${Math.ceil(amount)}`, this.x, this.y - 30, '#fbbf24', 24);
-                else GameApp.addFloatingText(`-${Math.ceil(amount)}`, this.x, this.y - 30, '#f87171');
+                if (isCrit) {
+                    GameApp.triggerScreenShake(7, 0.2); // Rung màn hình khi chí mạng
+                    GameApp.addFloatingText(`CRIT! -${Math.ceil(amount)}`, this.x, this.y - 30, '#fbbf24', 24);
+                } else {
+                    GameApp.addFloatingText(`-${Math.ceil(amount)}`, this.x, this.y - 30, '#f87171');
+                }
 
                 if (this.hp <= 0) { this.hp = 0; GameApp.endMatch(true); }
             }
