@@ -536,12 +536,10 @@
                 <h2 style="color:#ff4b2b; margin-bottom:15px;">NHẬT KÝ SỬA ĐỔI (CHANGE LOGS)</h2>
                 <div class="wiki-card">
                     <div>
-                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.5.1 - Cân Bằng Lại Boss Devil</h4>
+                        <h4 style="color:#ff4b2b; font-size:1.2rem; margin-bottom:8px;">Phiên bản v1.5.2 - Cập Nhật Chiêu 3 Cho Boss Devil</h4>
                         <ul style="margin-left:20px; line-height: 1.6; color:#cbd5e1; font-size:0.9rem;">
-                            <li><b>Tối ưu Chiêu 1 Hút Máu:</b> Có đường cảnh báo (1.2s) trước khi lao tới. Né thành công sẽ không bị dính hút máu. Dính chiêu vẫn có thể chạy ra khỏi phạm vi vùng đỏ (220px) để thoát.</li>
-                            <li><b>Xóa Chiêu 3:</b> Loại bỏ hoàn toàn chiêu 3 khỏi Devil.</li>
-                            <li><b>Nội tại Lời Nguyền Ác Quỷ:</b> 66% tỉ lệ gây Câm Lặng (6s) khi gây sát thương.</li>
-                            <li><b>Chiêu 2 Mưa Máu:</b> Triệu hồi mưa máu toàn map gây Suy Yếu (giảm 66% sát thương) trong 6s.</li>
+                            <li><b>Thêm Chiêu 3 (Huyết Trảm):</b> Devil truy đuổi người chơi và lần lượt chém 6 nhát vòng cung lớn hướng về phía nhân vật. Mỗi nhát gây sát thương bằng 6% máu hiện tại của Boss, gây Choáng (0.6s) và Làm Chậm (66%) trong 6s.</li>
+                            <li><b>Hệ thống Làm Chậm:</b> Thêm trạng thái Làm Chậm (-66% tốc độ di chuyển) hiển thị trên HUD.</li>
                         </ul>
                     </div>
                 </div>
@@ -695,7 +693,8 @@
                 stats: { hp: 666, speed: 6, damage: 6, dodge: 6, critRate: 6, critDmg: 666, dmgReduce: 6 },
                 passiveName: 'Lời Nguyền Ác Quỷ', passiveDesc: 'Mỗi khi gây sát thương có 66% tỉ lệ gây Câm Lặng (khiến người chơi không thể dùng chiêu) trong 6s.',
                 skill1Desc: 'Hút Máu: Cảnh báo 1.2s trước khi lao vào người chơi. Nếu trúng đòn sẽ gây 66% dmg & hút 6% máu trong 6s. Có thể chạy khỏi vòng 220px để thoát (Hồi 8s).',
-                skill2Desc: 'Mưa Máu: Triệu hồi mưa máu toàn map gây Suy Yếu (giảm 66% sát thương người chơi) trong 6s (Hồi 16s).'
+                skill2Desc: 'Mưa Máu: Triệu hồi mưa máu toàn map gây Suy Yếu (giảm 66% sát thương người chơi) trong 6s (Hồi 16s).',
+                skill3Desc: 'Huyết Trảm: Truy đuổi và lần lượt chém 6 nhát vòng cung lớn về phía người chơi, mỗi nhát gây 6% sát thương bằng máu hiện tại của Devil, gây choáng 0.6s và làm chậm 66% trong 6s (Hồi 22s).'
             }
         };
 
@@ -706,7 +705,6 @@
             player: null, boss: null, projectiles: [], particles: [], floatingTexts: [],
             currentWikiTab: 'chars',
 
-            // Screen Shake & Weather
             shakeTimer: 0, shakeIntensity: 0,
             bloodRainTimer: 0,
 
@@ -966,7 +964,6 @@
 
                 if (this.bloodRainTimer > 0) {
                     this.bloodRainTimer -= dt;
-                    // Tạo hạt mưa máu rơi
                     for (let i = 0; i < 3; i++) {
                         this.particles.push({
                             x: Math.random() * this.canvas.width,
@@ -1023,6 +1020,9 @@
                 }
                 if (this.player.weakenTimer > 0) {
                     extraText += ` | 📉 SUY YẾU (-66% DMG) (${this.player.weakenTimer.toFixed(1)}s)`;
+                }
+                if (this.player.slowTimer > 0) {
+                    extraText += ` | 🐌 LÀM CHẬM (-66% SPEED) (${this.player.slowTimer.toFixed(1)}s)`;
                 }
                 document.getElementById('player-extra-stat').innerText = extraText;
 
@@ -1125,6 +1125,7 @@
                 this.isStunned = false; this.stunTimer = 0;
                 this.silenceTimer = 0; // Hiệu ứng Câm Lặng từ Devil
                 this.weakenTimer = 0;  // Hiệu ứng Suy Yếu từ Devil (-66% Dmg)
+                this.slowTimer = 0;    // Hiệu ứng Làm Chậm từ Devil (-66% Speed)
 
                 // Burn Effect
                 this.burnTimer = 0;
@@ -1161,6 +1162,12 @@
                 GameApp.addFloatingText('WEAKENED! (-66% DMG)', this.x, this.y - 30, '#9333ea', 20);
             }
 
+            applySlow(duration = 6) {
+                if (this.isImmune) return;
+                this.slowTimer = duration;
+                GameApp.addFloatingText('SLOWED! (-66% SPEED)', this.x, this.y - 30, '#a855f7', 20);
+            }
+
             getEffectiveDamage() {
                 let dmg = this.damage;
                 if (this.weakenTimer > 0) {
@@ -1177,6 +1184,7 @@
 
                 if (this.silenceTimer > 0) this.silenceTimer -= dt;
                 if (this.weakenTimer > 0) this.weakenTimer -= dt;
+                if (this.slowTimer > 0) this.slowTimer -= dt;
 
                 if (this.burnTimer > 0) {
                     this.burnTimer -= dt;
@@ -1279,6 +1287,7 @@
                     const len = Math.hypot(dx, dy);
                     let curSpeed = this.speed;
                     if (this.data.id === 'cowboy' && this.huntingHourBuff > 0) curSpeed = 15 * 28;
+                    if (this.slowTimer > 0) curSpeed *= 0.34; // Giảm 66% tốc độ di chuyển khi bị Làm Chậm
 
                     this.x += (dx / len) * curSpeed * dt;
                     this.y += (dy / len) * curSpeed * dt;
@@ -1501,7 +1510,7 @@
                 GameApp.triggerScreenShake(8, 0.2);
                 GameApp.addFloatingText(`-${Math.ceil(finalDmg)}`, this.x, this.y - 20, '#ef4444');
 
-                // Kích hoạt Nội tại Ác Quỷ (Devil's Curse: 66% gây câm lặng 6s)
+                // Nội tại Ác Quỷ: 66% tỉ lệ gây Câm Lặng 6s khi gây sát thương
                 if (GameApp.boss && GameApp.boss.data.id === 'devil') {
                     if (Math.random() < 0.66) {
                         this.applySilence(6.0);
@@ -1550,6 +1559,13 @@
                     ctx.restore();
                 }
 
+                if (this.slowTimer > 0) {
+                    ctx.save();
+                    ctx.strokeStyle = '#a855f7'; ctx.lineWidth = 3; ctx.setLineDash([4, 4]);
+                    ctx.beginPath(); ctx.arc(this.x, this.y, this.radius + 14, 0, Math.PI * 2); ctx.stroke();
+                    ctx.restore();
+                }
+
                 const img = Assets.images[this.data.id];
                 if (Assets.loaded[this.data.id] && img) {
                     ctx.save();
@@ -1579,6 +1595,7 @@
 
                 this.skill1Timer = 3.0;
                 this.skill2Timer = 8.0;
+                this.skill3Timer = 12.0;
 
                 this.isStunned = false; this.stunTimer = 0;
 
@@ -1592,7 +1609,7 @@
                 this.isBreathingFire = false;
                 this.fireBreathTimer = 0;
 
-                // Devil Skill 1 Mechanics (Telegraph Charge & Drain)
+                // Devil Skill 1 Mechanics
                 this.isTelegraphingCharge = false;
                 this.telegraphTimer = 0;
                 this.chargeTargetX = 0;
@@ -1603,7 +1620,12 @@
                 this.dashVy = 0;
                 this.isLifeDraining = false;
                 this.lifeDrainTimer = 0;
-                this.drainRadius = 220; // Bán kính vùng hút máu
+                this.drainRadius = 220;
+
+                // Devil Skill 3 Mechanics (Huyết Trảm)
+                this.isCastingBloodSlash = false;
+                this.bloodSlashCount = 0;
+                this.bloodSlashTimer = 0;
             }
 
             update(dt) {
@@ -1626,8 +1648,8 @@
                     currentDmg = this.damage + stacks * 5;
                 }
 
-                // AI Movement (Chỉ di chuyển khi không gồng chiêu lao tới)
-                if (!this.isTelegraphingCharge && !this.isDashingToTarget) {
+                // AI Movement (Tự động di chuyển khi không vận chiêu lao tới hoặc chém Huyết Trảm)
+                if (!this.isTelegraphingCharge && !this.isDashingToTarget && !this.isCastingBloodSlash) {
                     this.moveTimer -= dt;
                     if (this.moveTimer <= 0) {
                         this.moveTimer = 1.0 + Math.random() * 1.5;
@@ -1659,7 +1681,7 @@
                 }
 
                 // SKILLS COOLDOWN
-                if (!this.isTelegraphingCharge && !this.isDashingToTarget) {
+                if (!this.isTelegraphingCharge && !this.isDashingToTarget && !this.isCastingBloodSlash) {
                     this.skill1Timer -= dt;
                 }
                 this.skill2Timer -= dt;
@@ -1742,10 +1764,10 @@
                         }
                     }
                 } else if (this.data.id === 'devil') {
-                    // DEVIL CHIÊU 1: Lao tới (có cảnh báo 1.2s) & Vùng Hút Máu (Bán kính 220px, có thể chạy thoát)
-                    if (this.skill1Timer <= 0 && !this.isTelegraphingCharge && !this.isDashingToTarget && !this.isLifeDraining) {
+                    // DEVIL CHIÊU 1: Hút Máu (Cảnh báo 1.2s trước khi lao tới)
+                    if (this.skill1Timer <= 0 && !this.isTelegraphingCharge && !this.isDashingToTarget && !this.isLifeDraining && !this.isCastingBloodSlash) {
                         this.isTelegraphingCharge = true;
-                        this.telegraphTimer = 1.2; // 1.2s cảnh báo né chiêu
+                        this.telegraphTimer = 1.2;
                         this.chargeTargetX = player.x;
                         this.chargeTargetY = player.y;
                         GameApp.addFloatingText('⚠️ WARNING!', this.x, this.y - 40, '#ef4444', 22);
@@ -1756,7 +1778,7 @@
                         if (this.telegraphTimer <= 0) {
                             this.isTelegraphingCharge = false;
                             this.isDashingToTarget = true;
-                            this.dashTimer = 0.25; // Lao tới cực nhanh trong 0.25s
+                            this.dashTimer = 0.25;
                             
                             const dx = this.chargeTargetX - this.x;
                             const dy = this.chargeTargetY - this.y;
@@ -1772,7 +1794,6 @@
                         this.x = Math.max(this.radius, Math.min(GameApp.canvas.width - this.radius, this.x));
                         this.y = Math.max(this.radius, Math.min(GameApp.canvas.height - this.radius, this.y));
 
-                        // Kiểm tra nếu va chạm người chơi
                         const distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
                         if (distToPlayer <= this.radius + player.radius + 15) {
                             this.isDashingToTarget = false;
@@ -1789,9 +1810,7 @@
                         this.lifeDrainTimer -= dt;
                         const distToPlayer = Math.hypot(player.x - this.x, player.y - this.y);
 
-                        // Kiểm tra xem người chơi còn trong vùng hút máu (220px) hay không
                         if (distToPlayer <= this.drainRadius) {
-                            // Gây sát thương & hút máu
                             const tickDmg = (currentDmg * 0.66 / 6) * dt * 60;
                             this.dealDamage(player, tickDmg);
 
@@ -1804,7 +1823,6 @@
                                 color: '#ef4444', size: 4, life: 0.3
                             });
                         } else {
-                            // Người chơi chạy ra khỏi vùng hút máu -> Thoát chiêu!
                             this.isLifeDraining = false;
                             GameApp.addFloatingText('ESCAPED DRAIN!', player.x, player.y - 30, '#34d399', 22);
                         }
@@ -1814,13 +1832,52 @@
                         }
                     }
 
-                    // DEVIL CHIÊU 2: Mưa Máu (Gây suy yếu giảm 66% dmg người chơi toàn map trong 6s, hồi chiêu 16s)
+                    // DEVIL CHIÊU 2: Mưa Máu
                     if (this.skill2Timer <= 0) {
                         this.skill2Timer = 16.0;
                         GameApp.bloodRainTimer = 6.0;
                         GameApp.triggerScreenShake(15, 0.5);
                         GameApp.addFloatingText('BLOOD RAIN OF DEVIL!', this.x, this.y - 40, '#991b1b', 24);
                         player.applyWeaken(6.0);
+                    }
+
+                    // DEVIL CHIÊU 3: HUYẾT TRẢM (Truy đuổi & Chém vòng cung 6 lần)
+                    if (!this.isCastingBloodSlash) {
+                        this.skill3Timer -= dt;
+                    }
+
+                    if (this.skill3Timer <= 0 && !this.isTelegraphingCharge && !this.isDashingToTarget && !this.isLifeDraining && !this.isCastingBloodSlash) {
+                        this.isCastingBloodSlash = true;
+                        this.bloodSlashCount = 0;
+                        this.bloodSlashTimer = 0;
+                        GameApp.addFloatingText('HUYẾT TRẢM (6 LẦN)!', this.x, this.y - 40, '#dc2626', 24);
+                    }
+
+                    if (this.isCastingBloodSlash) {
+                        // Truy đuổi nhân vật khi chém
+                        const angleToPlayer = Math.atan2(player.y - this.y, player.x - this.x);
+                        this.x += Math.cos(angleToPlayer) * currentSpeed * 1.25 * dt;
+                        this.y += Math.sin(angleToPlayer) * currentSpeed * 1.25 * dt;
+
+                        this.x = Math.max(this.radius, Math.min(GameApp.canvas.width - this.radius, this.x));
+                        this.y = Math.max(this.radius, Math.min(GameApp.canvas.height - this.radius, this.y));
+
+                        this.bloodSlashTimer -= dt;
+                        if (this.bloodSlashTimer <= 0) {
+                            this.bloodSlashTimer = 0.35; // Khoảng thời gian giữa 6 lần chém
+                            const slashDmg = this.hp * 0.06; // 6% sát thương bằng máu hiện tại của Boss
+
+                            GameApp.projectiles.push(new BossBloodSlashProjectile(
+                                this.x, this.y, angleToPlayer, slashDmg, this, 190, 0.25, 0.6, 6.0
+                            ));
+                            GameApp.triggerScreenShake(8, 0.15);
+                            this.bloodSlashCount++;
+
+                            if (this.bloodSlashCount >= 6) {
+                                this.isCastingBloodSlash = false;
+                                this.skill3Timer = 22.0; // Cooldown Chiêu 3
+                            }
+                        }
                     }
                 }
             }
@@ -1887,10 +1944,8 @@
                 }
 
                 if (this.data.id === 'devil') {
-                    // Vẽ Cảnh Báo Lao Tới (Chiêu 1)
                     if (this.isTelegraphingCharge) {
                         ctx.save();
-                        // Đường nét đứt hướng tới điểm nhắm
                         ctx.strokeStyle = 'rgba(239, 68, 68, 0.7)';
                         ctx.lineWidth = 3;
                         ctx.setLineDash([8, 8]);
@@ -1899,7 +1954,6 @@
                         ctx.lineTo(this.chargeTargetX, this.chargeTargetY);
                         ctx.stroke();
 
-                        // Vòng tròn mục tiêu biến đổi theo thời gian gồng
                         const ratio = 1 - (this.telegraphTimer / 1.2);
                         ctx.fillStyle = 'rgba(239, 68, 68, 0.25)';
                         ctx.beginPath();
@@ -1915,7 +1969,6 @@
                         ctx.restore();
                     }
 
-                    // Vẽ Vùng Hút Máu (Chiêu 1)
                     if (this.isLifeDraining) {
                         ctx.save();
                         ctx.fillStyle = 'rgba(185, 28, 28, 0.12)';
@@ -2005,6 +2058,50 @@
                 ctx.strokeStyle = this.stunDuration > 0 ? '#fbbf24' : '#60a5fa';
                 ctx.lineWidth = 8;
                 ctx.beginPath(); ctx.arc(0, 0, this.arcRadius, -0.6, 0.6); ctx.stroke();
+                ctx.restore();
+            }
+        }
+
+        class BossBloodSlashProjectile {
+            constructor(x, y, angle, damage, owner, arcRadius = 190, duration = 0.25, stunDuration = 0.6, slowDuration = 6.0) {
+                this.x = x; this.y = y; this.angle = angle;
+                this.damage = damage; this.owner = owner;
+                this.arcRadius = arcRadius; this.duration = duration; this.timer = duration;
+                this.stunDuration = stunDuration; this.slowDuration = slowDuration;
+                this.hasHit = false; this.destroyed = false;
+            }
+            update(dt) {
+                this.timer -= dt;
+                if (this.timer <= 0) this.destroyed = true;
+
+                if (!this.hasHit && GameApp.player) {
+                    const player = GameApp.player;
+                    const distToPlayer = Math.hypot(player.x - this.owner.x, player.y - this.owner.y);
+
+                    if (distToPlayer <= this.arcRadius + player.radius) {
+                        const angleToPlayer = Math.atan2(player.y - this.owner.y, player.x - this.owner.x);
+                        let diffAngle = Math.abs(angleToPlayer - this.angle);
+                        while (diffAngle > Math.PI) diffAngle -= Math.PI * 2;
+                        diffAngle = Math.abs(diffAngle);
+
+                        if (diffAngle <= 0.75) {
+                            this.owner.dealDamage(player, this.damage);
+                            if (this.stunDuration > 0) player.applyStun(this.stunDuration);
+                            if (this.slowDuration > 0) player.applySlow(this.slowDuration);
+                            this.hasHit = true;
+                        }
+                    }
+                }
+            }
+            draw(ctx) {
+                ctx.save();
+                ctx.translate(this.owner.x, this.owner.y);
+                ctx.rotate(this.angle);
+                ctx.strokeStyle = '#dc2626';
+                ctx.shadowColor = '#ef4444';
+                ctx.shadowBlur = 12;
+                ctx.lineWidth = 12;
+                ctx.beginPath(); ctx.arc(0, 0, this.arcRadius, -0.7, 0.7); ctx.stroke();
                 ctx.restore();
             }
         }
